@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server'
 import { APP_ICON_URL } from '~/lib/constants'
 import { getNeynarUser } from '~/lib/neynar'
 
-export const runtime = 'edge'                 // ⚡ indispensable pour next/og
 export const revalidate = 60                  // ← 60 s de cache (optionnel)
+export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
   const fid = new URL(req.url).searchParams.get('fid')
