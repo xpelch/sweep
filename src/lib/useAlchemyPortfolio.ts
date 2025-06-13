@@ -1,7 +1,6 @@
-import { Alchemy, Network, TokenBalance, TokenBalancesResponseErc20, TokenBalanceType } from "alchemy-sdk";
+import { TokenBalance } from "alchemy-sdk";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
-import { RPC_URL } from "../configs/env";
 import { isSignificantHolding, isTokenBlacklisted } from "../utils/tokenUtils";
 
 export type TokenInfo = {
@@ -29,10 +28,6 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
-  if (!RPC_URL) throw new Error("Missing RPC_URL env variable");
-  const apiKey = RPC_URL.split('/').pop();
-  const url = `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-address`;
-
   const filtered = tokens.filter((t) => t.balance !== '0' && t.symbol && t.name);
   const batches = chunkArray(filtered, 25);
   const priceMap: Record<string, number> = {};
@@ -42,7 +37,7 @@ async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
       network: 'base-mainnet',
       address: token.contractAddress,
     }));
-    const res = await fetch(url, {
+    const res = await fetch('/api/alchemy/prices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ addresses }),
@@ -88,7 +83,6 @@ export function useAlchemyPortfolio() {
   });
 
   const fetchPortfolio = useCallback(async () => {
-    if (!RPC_URL) throw new Error("Missing RPC_URL env variable");
     if (!address || !isConnected) {
       setPortfolioData(prev => ({ ...prev, tokens: [], significantTokens: [] }));
       return;
@@ -96,31 +90,23 @@ export function useAlchemyPortfolio() {
 
     setPortfolioData(prev => ({ ...prev, loading: true, error: null }));
     try {
-      const alchemy = new Alchemy({
-        apiKey: "", // Not needed if using custom RPC_URL
-        url: RPC_URL,
-        network: Network.BASE_MAINNET,
+      // Fetch token balances via API route (server-side, clé privée safe)
+      const res = await fetch('/api/alchemy/balances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address }),
       });
-
-      let tokenBalances: TokenBalance[] = [];
-      let pageKey: string | undefined = undefined;
-      
-      do {
-        const res: TokenBalancesResponseErc20 = await alchemy.core.getTokenBalances(address, { type: TokenBalanceType.ERC20, pageKey });
-        tokenBalances = tokenBalances.concat(res.tokenBalances);
-        pageKey = res.pageKey;
-      } while (pageKey);
-
-      console.log('tokenBalances', tokenBalances);
+      const { tokenBalances } = await res.json();
 
       // Filter out tokens with zero balance
-      const nonZero = tokenBalances.filter((t) => BigInt(t.tokenBalance || '0') !== 0n);
+      const nonZero = tokenBalances.filter((t: TokenBalance) => BigInt(t.tokenBalance || '0') !== 0n);
       console.log('nonZero', nonZero);
 
       // Fetch metadata for each token
       const tokensWithMeta: TokenInfo[] = await Promise.all(
-        nonZero.map(async (t) => {
-          const meta = await alchemy.core.getTokenMetadata(t.contractAddress);
+        nonZero.map(async (t: TokenBalance) => {
+          const meta = await fetch(`https://base-mainnet.g.alchemy.com/v2/demo/getTokenMetadata?contractAddress=${t.contractAddress}`)
+            .then(r => r.json());
           return {
             contractAddress: t.contractAddress,
             symbol: meta.symbol || "",

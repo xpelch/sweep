@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { RPC_URL } from "../configs/env";
 import type { TokenInfo } from "../lib/useAlchemyPortfolio";
 
 interface TokenHoldingsProps {
@@ -34,10 +33,6 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
-  if (!RPC_URL) throw new Error("Missing RPC_URL env variable");
-  const apiKey = RPC_URL.split("/").pop();
-  const url = `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-address`;
-
   const filtered = tokens.filter((t) => t.balance !== "0");
   const batches = chunkArray(filtered, 3);
 
@@ -47,7 +42,7 @@ async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
       network: "base-mainnet",
       address: t.contractAddress,
     }));
-    const res = await fetch(url, {
+    const res = await fetch('/api/alchemy', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ addresses }),
