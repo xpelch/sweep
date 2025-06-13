@@ -4,7 +4,8 @@ import { MiniAppProvider } from "@neynar/react";
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 import dynamic from "next/dynamic";
-import { PortfolioProvider } from "../lib/PortfolioProvider";
+import FarcasterReady from "~/components/FarcasterReady";
+import { PortfolioProvider } from "~/components/providers/PortfolioProvider";
 
 const WagmiProvider = dynamic(
   () => import("~/components/providers/WagmiProvider"),
@@ -17,11 +18,12 @@ export function Providers({ session, children }: { session: Session | null, chil
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
-        <PortfolioProvider>
-          <MiniAppProvider analyticsEnabled={false}>
+        <MiniAppProvider analyticsEnabled={false}>
+          <PortfolioProvider>
+          <FarcasterReady />
             {children}
-          </MiniAppProvider>
-        </PortfolioProvider>
+          </PortfolioProvider>
+        </MiniAppProvider>
       </WagmiProvider>
     </SessionProvider>
   );

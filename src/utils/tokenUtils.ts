@@ -16,6 +16,27 @@ export function blacklistToken(address: string): void {
     }
 }
 
+export function removeSignificantToken(contractAddress: string): void {
+  try {
+    const cached = localStorage.getItem("cachedPortfolioData");
+    if (!cached) return;
+
+    const parsed = JSON.parse(cached);
+
+    if (!Array.isArray(parsed.significantTokens)) return;
+
+    parsed.significantTokens = parsed.significantTokens.filter(
+      (token: { contractAddress: string }) =>
+        token.contractAddress.toLowerCase() !== contractAddress.toLowerCase()
+    );
+
+    localStorage.setItem("cachedPortfolioData", JSON.stringify(parsed));
+  } catch (err) {
+    console.error("Error removing token from significantTokens:", err);
+  }
+}
+
+
 export function calculateTotalValue(tokens: TokenInfo[], prices: Record<string, number>): number {
     return tokens.reduce((sum, token) => {
         const price = prices[token.contractAddress?.toLowerCase()];

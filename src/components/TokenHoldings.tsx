@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { TokenInfo } from "../lib/useAlchemyPortfolio";
 
 interface TokenHoldingsProps {
@@ -10,50 +10,15 @@ interface TokenHoldingsProps {
   targetToken?: string;
 }
 
-interface TokenPrice {
-  currency: string;
-  value: string;
-}
-
-interface TokenPriceResponse {
-  address: string;
-  prices: TokenPrice[];
-}
-
-interface TokenPricesResponse {
-  data: TokenPriceResponse[];
-}
-
-/* ---------- utils internes ---------- */
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
-    arr.slice(i * size, i * size + size),
-  );
-}
-
-async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
-  const filtered = tokens.filter((t) => t.balance !== "0");
-  const batches = chunkArray(filtered, 3);
-
-  const priceMap: Record<string, number> = {};
-  for (const batch of batches) {
-    const addresses = batch.map((t) => ({
-      network: "base-mainnet",
-      address: t.contractAddress,
-    }));
-    const res = await fetch('/api/alchemy', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ addresses }),
-    });
-    const data: TokenPricesResponse = await res.json();
-    for (const entry of data.data) {
-      const usd = entry.prices?.find((p: TokenPrice) => p.currency === "usd")?.value;
-      if (usd) priceMap[entry.address.toLowerCase()] = parseFloat(usd);
-    }
+// Add this helper to fetch cached prices from localStorage
+function getCachedTokenPrices(): { prices: Record<string, number>; timestamp: number } | null {
+  try {
+    const raw = localStorage.getItem('cachedTokenPrices');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
-  return priceMap;
 }
 
 /* ---------- composant ---------- */
@@ -66,32 +31,16 @@ export default function TokenHoldings({
   targetToken,
 }: TokenHoldingsProps) {
   const [prices, setPrices] = useState<Record<string, number>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState(0);
 
-  /* ← 1. on ajoute `tokens` dans les dépendances */
-  const fetchPrices = useCallback(async () => {
-    if (!tokens.length || isLoading) return;
-
-    const now = Date.now();
-    if (now - lastUpdateTime < 30_000) return;
-
-    setIsLoading(true);
-    try {
-      const priceMap = await fetchTokenPricesByAddress(tokens);
-      setPrices(priceMap);
-      setLastUpdateTime(now);
-      onPricesUpdate?.(priceMap);
-    } catch (e) {
-      console.error("Error fetching prices:", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [tokens, onPricesUpdate, isLoading, lastUpdateTime]);
-
+  // Fetch prices from localStorage on mount/tokens change
+  // and call onPricesUpdate if provided
   useEffect(() => {
-    fetchPrices();
-  }, [fetchPrices]);
+    const cache = getCachedTokenPrices();
+    if (cache && cache.prices) {
+      setPrices(cache.prices);
+      if (onPricesUpdate) onPricesUpdate(cache.prices);
+    }
+  }, [tokens, onPricesUpdate]);
 
   if (!tokens.length) return <div className="text-[#b8b4d8]">No tokens found.</div>;
 

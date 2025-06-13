@@ -1,7 +1,15 @@
 import { TokenBalance } from "alchemy-sdk";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPublicClient, erc20Abi, http } from "viem";
+import { base } from "viem/chains";
 import { useAccount } from "wagmi";
+import { PUBLIC_RPC_URL } from "~/configs/env";
 import { isSignificantHolding, isTokenBlacklisted } from "../utils/tokenUtils";
+
+const client = createPublicClient({
+  chain: base,
+  transport: http(PUBLIC_RPC_URL!), // ou ton endpoint RPC public
+});
 
 export type TokenInfo = {
   contractAddress: string;
@@ -27,29 +35,62 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   );
 }
 
+// --- Price cache helpers ---
+function cacheTokenPrices(prices: Record<string, number>) {
+  try {
+    localStorage.setItem('cachedTokenPrices', JSON.stringify({ prices, timestamp: Date.now() }));
+  } catch {}
+}
+
+function getCachedTokenPrices(): { prices: Record<string, number>; timestamp: number } | null {
+  try {
+    const raw = localStorage.getItem('cachedTokenPrices');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
+  const cache = getCachedTokenPrices();
+  const now = Date.now();
+
+  // Use cached prices if less than 5 min old
+  if (cache && now - cache.timestamp < 300_000) {
+    return cache.prices;
+  }
+
   const filtered = tokens.filter((t) => t.balance !== '0' && t.symbol && t.name);
   const batches = chunkArray(filtered, 25);
-  const priceMap: Record<string, number> = {};
 
-  for (const batch of batches) {
-    const addresses = batch.map((token) => ({
-      network: 'base-mainnet',
-      address: token.contractAddress,
-    }));
-    const res = await fetch('/api/alchemy/prices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ addresses }),
-    });
-    const data = await res.json();
-    for (const entry of data.data) {
-      const usdPrice = entry.prices?.find(
-        (p: { currency: string }) => p.currency === 'usd',
-      )?.value;
-      if (usdPrice) priceMap[entry.address.toLowerCase()] = parseFloat(usdPrice);
-    }
-  }
+  // Récupération concurrente des prix pour chaque batch
+  const responses = await Promise.all(
+    batches.map(async (batch) => {
+      const addresses = batch.map(({ contractAddress }) => ({
+        network: 'base-mainnet',
+        address: contractAddress,
+      }));
+      const res = await fetch('/api/prices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addresses }),
+      });
+      return (await res.json()).data as Array<{
+        address: string;
+        prices?: { currency: string; value: string }[];
+      }>;
+    }),
+  );
+
+  // Fusion des résultats + construction de la map {address → price}
+  const priceMap: Record<string, number> = {};
+  responses.flat().forEach((entry) => {
+    const usd = entry.prices?.find((p) => p.currency === 'usd')?.value;
+    if (usd) priceMap[entry.address.toLowerCase()] = parseFloat(usd);
+  });
+
+  cacheTokenPrices(priceMap);
   return priceMap;
 }
 
@@ -59,28 +100,35 @@ function cachePortfolioData(data: PortfolioData) {
   } catch {}
 }
 
-function getCachedPortfolioData(): PortfolioData | null {
-  try {
-    const data = localStorage.getItem('cachedPortfolioData');
-    return data ? JSON.parse(data) : null;
-  } catch {
-    return null;
-  }
-}
+const defaultPortfolioData: PortfolioData = {
+  tokens: [],
+  prices: {},
+  significantTokens: [],
+  loading: false,
+  error: null,
+  lastUpdateTime: 0,
+};
 
 export function useAlchemyPortfolio() {
   const { address, isConnected } = useAccount();
   const [useSignificanceFilter, setUseSignificanceFilter] = useState(true);
-  const [portfolioData, setPortfolioData] = useState<PortfolioData>(() => {
-    return  {
-      tokens: [],
-      prices: {},
-      significantTokens: [],
-      loading: false,
-      error: null,
-      lastUpdateTime: 0,
-    };
-  });
+  const [portfolioData, setPortfolioData] = useState<PortfolioData>(defaultPortfolioData);
+
+  const hasLoadedCache = useRef(false);
+
+  useEffect(() => {
+    if (hasLoadedCache.current) return;          // 1 seule fois
+    try {
+      const raw = localStorage.getItem('cachedPortfolioData');
+      if (raw) {
+        const cached = JSON.parse(raw) as PortfolioData;
+        if (Date.now() - cached.lastUpdateTime < 300_000) {
+          setPortfolioData(cached);              // ✅ setState après mount
+        }
+      }
+    } catch {/* ignore JSON errors */}
+    hasLoadedCache.current = true;
+  }, []);
 
   const fetchPortfolio = useCallback(async () => {
     if (!address || !isConnected) {
@@ -91,7 +139,7 @@ export function useAlchemyPortfolio() {
     setPortfolioData(prev => ({ ...prev, loading: true, error: null }));
     try {
       // Fetch token balances via API route (server-side, clé privée safe)
-      const res = await fetch('/api/alchemy/balances', {
+      const res = await fetch('/api/balances', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address }),
@@ -100,36 +148,29 @@ export function useAlchemyPortfolio() {
 
       // Filter out tokens with zero balance
       const nonZero = tokenBalances.filter((t: TokenBalance) => BigInt(t.tokenBalance || '0') !== 0n);
-      console.log('nonZero', nonZero);
 
       // Fetch metadata for each token
-      const tokensWithMeta: TokenInfo[] = await Promise.all(
-        nonZero.map(async (t: TokenBalance) => {
-          const meta = await fetch(`https://base-mainnet.g.alchemy.com/v2/demo/getTokenMetadata?contractAddress=${t.contractAddress}`)
-            .then(r => r.json());
-          return {
-            contractAddress: t.contractAddress,
-            symbol: meta.symbol || "",
-            name: meta.name || "",
-            logo: meta.logo || null,
-            balance: (Number(t.tokenBalance) / Math.pow(10, meta.decimals || 18)).toString(),
-            decimals: meta.decimals || 18,
-          };
-        })
+      const tokensWithMeta: TokenInfo[] = await fetchTokenMetadatas(
+        nonZero.map((t: TokenBalance) => t.contractAddress)
       );
 
-      // Filter out tokens without symbol or name
+      for (const t of tokensWithMeta) {
+        const bal = nonZero.find((b: TokenBalance) => b.contractAddress.toLowerCase() === t.contractAddress.toLowerCase());
+        t.balance = bal ? (Number(bal.tokenBalance) / Math.pow(10, t.decimals)).toString() : "0";
+      }
+
       const validTokens = tokensWithMeta.filter(t => t.symbol && t.name);
 
-      // Fetch prices and check significant holdings
+      console.log('validTokens', validTokens.length);
       const priceMap = await fetchTokenPricesByAddress(validTokens);
-      // Filter out tokens with value < $0.01
+
       const minUsdValue = 0.01;
       const valueFilteredTokens = validTokens.filter(token => {
         const price = priceMap[token.contractAddress.toLowerCase()] || 0;
         const value = parseFloat(token.balance) * price;
         return value >= minUsdValue;
       });
+      
       const significant = await Promise.all(
         valueFilteredTokens.map(async (token) => {
           const price = priceMap[token.contractAddress.toLowerCase()];
@@ -166,18 +207,6 @@ export function useAlchemyPortfolio() {
     }
   }, [address, isConnected, useSignificanceFilter]);
 
-  useEffect(() => {
-    const cached = getCachedPortfolioData();
-    const now = Date.now();
-    
-    if (cached && now - cached.lastUpdateTime < 300000) {
-      setPortfolioData(cached);
-    } else {
-      fetchPortfolio(); // force refresh
-    }
-    // eslint-disable-next-line
-  }, [address, isConnected, useSignificanceFilter]);
-
   const sortedTokens = useMemo(() => 
     portfolioData.significantTokens
       .sort((a, b) => {
@@ -189,6 +218,40 @@ export function useAlchemyPortfolio() {
       }),
     [portfolioData.significantTokens, portfolioData.prices]
   );
+
+  async function fetchTokenMetadatas(addresses: string[]) {
+    const batchSize = 50;
+    const chunkArray = <T,>(arr: T[], size: number) =>
+      Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+        arr.slice(i * size, i * size + size)
+      );
+  
+    const addressChunks = chunkArray(addresses, batchSize);
+    const metadatas: TokenInfo[] = [];
+  
+    for (const chunk of addressChunks) {
+      const calls = chunk.flatMap((address) => [
+        { address: address as `0x${string}`, abi: erc20Abi, functionName: 'name' as const },
+        { address: address as `0x${string}`, abi: erc20Abi, functionName: 'symbol' as const },
+        { address: address as `0x${string}`, abi: erc20Abi, functionName: 'decimals' as const },
+      ]);
+      const results = await client.multicall({ contracts: calls });
+      for (let i = 0; i < chunk.length; i++) {
+        const name = results[i * 3].result as string;
+        const symbol = results[i * 3 + 1].result as string;
+        const decimals = results[i * 3 + 2].result as number;
+        metadatas.push({
+          contractAddress: chunk[i],
+          name,
+          symbol,
+          decimals,
+          logo: null, // ou une logique custom si tu veux
+          balance: "0", // à remplir plus tard
+        });
+      }
+    }
+    return metadatas;
+  }
 
   return {
     ...portfolioData,

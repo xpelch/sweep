@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { RiErrorWarningFill } from 'react-icons/ri';
-import { usePortfolio } from '~/lib/PortfolioProvider';
+import { usePortfolio } from '~/components/providers/PortfolioProvider';
 import { type SwapStatus } from '../types';
 
 interface SwapConfirmationModalProps {

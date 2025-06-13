@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { useAccount } from "wagmi";
 import { TARGET_TOKENS } from "../configs/constants";
 import { logError } from "../lib/logger";
-import { usePortfolio } from "../lib/PortfolioProvider";
 import { useSweep } from "../lib/useSweep";
 import { useTokenRefresh } from "../lib/useTokenRefresh";
 import { useTokenSelection } from "../lib/useTokenSelection";
@@ -13,6 +12,7 @@ import { useTotalValue } from "../lib/useTotalValue";
 import { type TipConfig, type TokenSymbol } from "../types/index";
 import ActionButtons from "./ActionButtons";
 import NavBar from "./NavBar";
+import { usePortfolio } from "./providers/PortfolioProvider";
 import SwapConfirmationModal from "./SwapConfirmationModal";
 import TipModal from "./TipModal";
 import TokenHoldings from "./TokenHoldings";
@@ -39,9 +39,9 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     currency: "USDC",
   });
 
-  const { refreshing, refreshKey, handleRefresh } = useTokenRefresh(refreshBalances);
+  const { refreshing, refreshKey, handleRefresh, handleUIRefresh } = useTokenRefresh(refreshBalances);
 
-  const { sweep, isLoading: sweepLoading, error: sweepError, swapStatus } = useSweep(handleRefresh);
+  const { sweep, isLoading: sweepLoading, error: sweepError, swapStatus } = useSweep(handleRefresh, handleUIRefresh);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const filteredTokens = significantTokens.filter(t => t.symbol !== targetToken);
@@ -119,7 +119,6 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
 
     try {
       await sweep(tokenAddresses, targetAddress, amounts);
-      await handleRefresh(); // balances + ui refresh
       clearSelection();
     } catch (err) {
       logError("Sweep failed:", err);

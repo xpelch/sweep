@@ -18,7 +18,7 @@ import {
   ZERO_ADDRESS,
 } from '../configs/constants';
 import { type SwapQuote, type SwapStatus } from '../types';
-import { blacklistToken } from '../utils/tokenUtils';
+import { blacklistToken, removeSignificantToken } from '../utils/tokenUtils';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const REQ_DELAY = 1_000; // 1 seconde
@@ -97,6 +97,7 @@ export function useSweep(onRefresh?: () => void) {
 
           if (res.status === 503) {
             blacklistToken(token);
+            removeSignificantToken(token);
             logInfo('blacklisted token', token);
             processed.push({
               address: token,
