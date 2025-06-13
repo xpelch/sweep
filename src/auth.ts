@@ -1,6 +1,7 @@
-import { AuthOptions, getServerSession } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials";
 import { createAppClient, viemConnector } from "@farcaster/auth-client";
+import { AuthOptions, getServerSession } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { logError, logWarn } from "./lib/logger";
 
 declare module "next-auth" {
   interface Session {
@@ -12,15 +13,15 @@ declare module "next-auth" {
 
 function getDomainFromUrl(urlString: string | undefined): string {
   if (!urlString) {
-    console.warn('NEXTAUTH_URL is not set, using localhost:3000 as fallback');
+    logWarn('NEXTAUTH_URL is not set, using localhost:3000 as fallback');
     return 'localhost:3000';
   }
   try {
     const url = new URL(urlString);
     return url.hostname;
   } catch (error) {
-    console.error('Invalid NEXTAUTH_URL:', urlString, error);
-    console.warn('Using localhost:3000 as fallback');
+    logError('Invalid NEXTAUTH_URL:', urlString, error);
+    logWarn('Using localhost:3000 as fallback');
     return 'localhost:3000';
   }
 }
@@ -59,7 +60,7 @@ export const authOptions: AuthOptions = {
       async authorize(credentials, req) {
         const csrfToken = req?.body?.csrfToken;
         if (!csrfToken) {
-          console.error('CSRF token is missing from request');
+          logError('CSRF token is missing from request');
           return null;
         }
 
@@ -129,7 +130,7 @@ export const getSession = async () => {
   try {
     return await getServerSession(authOptions);
   } catch (error) {
-    console.error('Error getting server session:', error);
+    logError('Error getting server session:', error);
     return null;
   }
 }

@@ -13,24 +13,30 @@ Check out [this Neynar docs page](https://docs.neynar.com/docs/create-farcaster-
 ## Getting Started
 
 To create a new mini app project, run:
+
 ```{bash}
 npx @neynar/create-farcaster-mini-app@latest
 ```
 
 To run the project:
+
 ```{bash}
 cd <PROJECT_NAME>
 npm run dev
 ```
 
 ### Importing the CLI
+
 To invoke the CLI directly in JavaScript, add the npm package to your project and use the following import statement:
+
 ```{javascript}
 import { init } from '@neynar/create-farcaster-mini-app';
 ```
 
 ## Deploying to Vercel
+
 For projects that have made minimal changes to the quickstart template, deploy to vercel by running:
+
 ```{bash}
 npm run deploy:vercel
 ```
@@ -38,6 +44,7 @@ npm run deploy:vercel
 ## Building for Production
 
 To create a production build, run:
+
 ```{bash}
 npm run build
 ```
@@ -53,16 +60,19 @@ This section is only for working on the script and template. If you simply want 
 To iterate on the CLI and test changes in a generated app without publishing to npm:
 
 1. In your installer/template repo (this repo), run:
+
    ```bash
    npm link
    ```
+
    This makes your local version globally available as a symlinked package.
 
-
 1. Now, when you run:
+
    ```bash
    npx @neynar/create-farcaster-mini-app
    ```
+
    ...it will use your local changes (including any edits to `init.js` or other files) instead of the published npm version.
 
 ### Alternative: Running the Script Directly
@@ -79,3 +89,78 @@ However, this does not fully replicate the npx install flow and may not catch al
 
 If you update environment variable handling, remember to replicate any changes in the `dev`, `build`, and `deploy` scripts as needed. The `build` and `deploy` scripts may need further updates and are less critical for most development workflows.
 
+## Qualité du code et automatisation
+
+### Hooks pre-commit
+
+Le projet utilise [Husky](https://typicode.github.io/husky) et [lint-staged](https://github.com/okonet/lint-staged) pour garantir la qualité du code avant chaque commit :
+
+- **Lint** : `npm run lint` vérifie la conformité du code avec ESLint.
+- **Format** : `prettier --write` formate automatiquement le code JS/TS, JSON, Markdown, CSS, etc.
+- **Test** : (à compléter, voir section tests)
+
+Pour activer les hooks :
+
+```bash
+npm install
+npm run prepare
+```
+
+Les hooks sont configurés dans `package.json` (section `lint-staged`).
+
+### Accessibilité
+
+L'audit d'accessibilité est en cours. Les composants UI principaux sont en cours de vérification pour :
+
+- Labels associés aux inputs
+- Contrastes suffisants
+- Navigation clavier
+- Utilisation des rôles ARIA et attributs `aria-*` si nécessaire
+
+### Documentation technique
+
+La documentation détaillée de l'architecture, des choix techniques et des endpoints API sera ajoutée prochainement dans cette section.
+
+# Docker & Farcaster Mini App Guide
+
+## Docker Usage
+
+### Build and Run with Docker Compose
+
+```bash
+docker-compose -f sweep/docker-compose.yml up --build
+```
+
+- UI available at <http://localhost:3000>
+- Proxy server at <http://localhost:3001>
+
+### Environment Variables
+
+- Copy your .env file to the project root. Docker Compose will use it for both services.
+
+## Farcaster Mini App Compliance
+
+### Loading
+
+- The app calls `sdk.actions.ready()` as soon as the interface is ready, minimizing splash screen time and avoiding jitter.
+
+### Sharing
+
+- The app includes the `fc:frame` meta tag in the root layout for embeddable sharing.
+- Open Graph meta tags are set for rich previews.
+- Test sharing in Warpcast developer tools and with cloudflared/ngrok for public access.
+
+### Best Practices
+
+- Use skeletons/placeholders for async content.
+- Harden Express and Next.js for production (see TASKS.md for details).
+
+## Testing
+
+- Validate that the UI and proxy work together in Docker.
+- Use Warpcast tools to verify sharing and loading compliance.
+
+For more, see:
+
+- [Farcaster Mini Apps Loading Guide](https://miniapps.farcaster.xyz/docs/guides/loading)
+- [Farcaster Mini Apps Sharing Guide](https://miniapps.farcaster.xyz/docs/guides/sharing)

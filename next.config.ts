@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // No custom rewrites needed for /api/0x-quote
 };
 
 export default nextConfig;

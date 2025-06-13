@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #18122B;
+  --foreground: #ededed;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #18122B;
     --foreground: #ededed;
   }
 }
@@ -19,6 +19,8 @@ body {
   background: var(--background);
   font-family: 'Inter', Helvetica, Arial, sans-serif;
 }
+
+
 
 * {
   scrollbar-width: none; /* Firefox */
@@ -33,4 +35,49 @@ body {
   :root {
     --radius: 0.5rem;
   }
+}
+
+/* Personnalisation Sonner pour thème violet/dark */
+:root,
+[data-sonner-theme="dark"] {
+  --sonner-bg: #221B2F;
+  --sonner-border: #32275A;
+  --sonner-success-bg: #1A1523;
+  --sonner-success-border: #9F7AEA;
+  --sonner-success-text: #9F7AEA;
+  --sonner-error-bg: #2d1124;
+  --sonner-error-border: #e11d48;
+  --sonner-error-text: #fca5a5;
+  --sonner-warning-bg: #2a1a0a;
+  --sonner-warning-border: #fbbf24;
+  --sonner-warning-text: #fde68a;
+  --sonner-info-bg: #18122B;
+  --sonner-info-border: #60a5fa;
+  --sonner-info-text: #bae6fd;
+  --sonner-text: #e0e0e0;
+  --sonner-shadow: 0 4px 32px 0 #00000080;
+}
+
+[data-rich-colors="true"][data-sonner-toast][data-type="success"] {
+  background: #1A1523 !important;
+  border-color: #9F7AEA !important;
+  color: #9F7AEA !important;
+}
+
+[data-rich-colors="true"][data-sonner-toast][data-type="error"] {
+  background: #2d1124 !important;
+  border-color: #e11d48 !important;
+  color: #fca5a5 !important;
+}
+
+[data-rich-colors="true"][data-sonner-toast][data-type="warning"] {
+  background: #2a1a0a !important;
+  border-color: #fbbf24 !important;
+  color: #fde68a !important;
+}
+
+[data-rich-colors="true"][data-sonner-toast][data-type="info"] {
+  background: #18122B !important;
+  border-color: #60a5fa !important;
+  color: #bae6fd !important;
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { MiniAppProvider } from "@neynar/react";
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
-import { MiniAppProvider } from "@neynar/react";
-import { SafeFarcasterSolanaProvider } from "~/components/providers/SafeFarcasterSolanaProvider";
+import dynamic from "next/dynamic";
+import { PortfolioProvider } from "../lib/PortfolioProvider";
 
 const WagmiProvider = dynamic(
   () => import("~/components/providers/WagmiProvider"),
@@ -14,15 +14,14 @@ const WagmiProvider = dynamic(
 );
 
 export function Providers({ session, children }: { session: Session | null, children: React.ReactNode }) {
-  const solanaEndpoint = process.env.SOLANA_RPC_ENDPOINT || "https://solana-rpc.publicnode.com";
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
-        <MiniAppProvider analyticsEnabled={true}>
-          <SafeFarcasterSolanaProvider endpoint={solanaEndpoint}>
+        <PortfolioProvider>
+          <MiniAppProvider analyticsEnabled={false}>
             {children}
-          </SafeFarcasterSolanaProvider>
-        </MiniAppProvider>
+          </MiniAppProvider>
+        </PortfolioProvider>
       </WagmiProvider>
     </SessionProvider>
   );
