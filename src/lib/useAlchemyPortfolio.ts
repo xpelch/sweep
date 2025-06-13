@@ -1,7 +1,7 @@
 import { Alchemy, Network, TokenBalance, TokenBalancesResponseErc20, TokenBalanceType } from "alchemy-sdk";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
-import { RPC_URL } from "../configs/env";
+import { PUBLIC_RPC_URL, RPC_URL } from "../configs/env";
 import { isSignificantHolding, isTokenBlacklisted } from "../utils/tokenUtils";
 
 export type TokenInfo = {
@@ -29,6 +29,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
+  if (!RPC_URL) throw new Error("Missing RPC_URL env variable");
   const apiKey = RPC_URL.split('/').pop();
   const url = `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-address`;
 
@@ -96,7 +97,7 @@ export function useAlchemyPortfolio() {
     try {
       const alchemy = new Alchemy({
         apiKey: "", // Not needed if using custom RPC_URL
-        url: RPC_URL,
+        url: RPC_URL ?? PUBLIC_RPC_URL,
         network: Network.BASE_MAINNET,
       });
 

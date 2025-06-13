@@ -34,6 +34,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 async function fetchTokenPricesByAddress(tokens: TokenInfo[]) {
+  if (!RPC_URL) throw new Error("Missing RPC_URL env variable");
   const apiKey = RPC_URL.split("/").pop();
   const url = `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-address`;
 
