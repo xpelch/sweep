@@ -39,9 +39,9 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     currency: "USDC",
   });
 
-  const { refreshing, refreshKey, handleRefresh, handleUIRefresh } = useTokenRefresh(refreshBalances);
+  const { refreshing, refreshKey, handleRefresh } = useTokenRefresh(refreshBalances);
 
-  const { sweep, isLoading: sweepLoading, error: sweepError, swapStatus } = useSweep(handleRefresh, handleUIRefresh);
+  const { sweep, isLoading: sweepLoading, error: sweepError, swapStatus } = useSweep(handleRefresh);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const filteredTokens = significantTokens.filter(t => t.symbol !== targetToken);
