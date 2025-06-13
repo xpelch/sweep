@@ -1,7 +1,7 @@
 import { Alchemy, Network, TokenBalance, TokenBalancesResponseErc20, TokenBalanceType } from "alchemy-sdk";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
-import { PUBLIC_RPC_URL, RPC_URL } from "../configs/env";
+import { RPC_URL } from "../configs/env";
 import { isSignificantHolding, isTokenBlacklisted } from "../utils/tokenUtils";
 
 export type TokenInfo = {
@@ -88,6 +88,7 @@ export function useAlchemyPortfolio() {
   });
 
   const fetchPortfolio = useCallback(async () => {
+    if (!RPC_URL) throw new Error("Missing RPC_URL env variable");
     if (!address || !isConnected) {
       setPortfolioData(prev => ({ ...prev, tokens: [], significantTokens: [] }));
       return;
@@ -97,7 +98,7 @@ export function useAlchemyPortfolio() {
     try {
       const alchemy = new Alchemy({
         apiKey: "", // Not needed if using custom RPC_URL
-        url: RPC_URL ?? PUBLIC_RPC_URL,
+        url: RPC_URL,
         network: Network.BASE_MAINNET,
       });
 
