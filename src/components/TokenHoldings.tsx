@@ -51,7 +51,7 @@ export default function TokenHoldings({
           (t) => t.contractAddress === token.contractAddress,
         );
         const price = prices[token.contractAddress.toLowerCase()];
-        const value = price ? (parseFloat(token.balance) * price).toFixed(2) : "--";
+        const value = price ? (parseFloat(token.amount) * price).toFixed(2) : "--";
         const isTarget = targetToken && token.symbol === targetToken;
 
         return (

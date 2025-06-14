@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import {
   createPublicClient,
   http,
-  parseUnits,
   type Address,
   type Hex,
 } from 'viem';
@@ -41,7 +40,8 @@ export function useSweep(onRefresh?: () => void) {
     async (
       tokens: string[],
       targetToken: string,
-      amounts: string[],
+      uiAmounts: string[],
+      rawAmounts: bigint[],
       selected?: { contractAddress: string; symbol: string }[],
     ) => {
       if (!walletClient) return setError('Wallet not connected');
@@ -57,7 +57,9 @@ export function useSweep(onRefresh?: () => void) {
       /* ------------------------------------------------------------------ */
       for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
-        const uiAmount = amounts[i];
+        const uiAmount = uiAmounts[i];
+        const rawAmount = rawAmounts[i];
+
         const symbol =
           selected?.find((t) => t.contractAddress.toLowerCase() === token.toLowerCase())
             ?.symbol ??
@@ -80,15 +82,7 @@ export function useSweep(onRefresh?: () => void) {
 
         try {
           /* --------- 1. Quote (0x) ------------------------------------- */
-          const decimals = await publicClient.readContract({
-            address: token as Address,
-            abi: ERC20_ABI,
-            functionName: 'decimals',
-          });
-
-          const amount = parseUnits(uiAmount, Number(decimals));
-
-          if (amount === 0n) {
+          if (rawAmount === 0n) {
             processed.push({
               address: token,
               amount: uiAmount,
@@ -105,12 +99,20 @@ export function useSweep(onRefresh?: () => void) {
             chainId: '8453',
             sellToken: token,
             buyToken: targetToken,
-            sellAmount: amount.toString(),
+            sellAmount: rawAmount.toString(),
             slippageBps: '500',
             taker: walletClient.account.address,
             sellEntireBalance: 'true',
           });
-          const res = await fetch(`/api/0x-quote?${params.toString()}`);
+          let res;
+          let retryCount = 0;
+          while (true) {
+            res = await fetch(`/api/0x-quote?${params.toString()}`);
+            if (res.status !== 422) break;
+            retryCount++;
+            if (retryCount >= 3) break;
+            await sleep(REQ_DELAY); // wait before retry
+          }
 
           if (res.status === 503) {
             blacklistToken(token);
@@ -136,7 +138,7 @@ export function useSweep(onRefresh?: () => void) {
 
           const quote: SwapQuote = {
             token,
-            amount,
+            amount: rawAmount,
             allowanceTarget: transaction.to,
             tx: {
               to: transaction.to as Address,
@@ -151,6 +153,7 @@ export function useSweep(onRefresh?: () => void) {
             status: 'confirming',
             symbol,
           });
+          
           updateStatus(processed);
 
           /* --------- 2. Approve si nécessaire -------------------------- */
@@ -178,8 +181,8 @@ export function useSweep(onRefresh?: () => void) {
             data: quote.tx.data,
             value: quote.tx.value,
           });
-          const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash });
 
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash });
           const idx = processed.findIndex((t) => t.address === quote.token);
 
           if (receipt.status !== 'success') {
@@ -216,7 +219,7 @@ export function useSweep(onRefresh?: () => void) {
         }
 
         updateStatus(processed);
-        await sleep(REQ_DELAY); // throttle => 1 req/s
+        await sleep(REQ_DELAY);
       }
 
       /* ------------------------ Fin du lot ---------------------------- */

@@ -1,24 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useAccount } from "wagmi";
-import { clearLocalStorage } from "~/utils/tokenUtils";
-import { TARGET_TOKENS } from "../configs/constants";
-import { logError } from "../lib/logger";
-import { useSweep } from "../lib/useSweep";
-import { useTokenRefresh } from "../lib/useTokenRefresh";
-import { useTokenSelection } from "../lib/useTokenSelection";
-import { useTotalValue } from "../lib/useTotalValue";
-import { type TipConfig, type TokenSymbol } from "../types/index";
-import ActionButtons from "./ActionButtons";
-import NavBar from "./NavBar";
-import { usePortfolio } from "./providers/PortfolioProvider";
-import SwapConfirmationModal from "./SwapConfirmationModal";
-import TipModal from "./TipModal";
-import TokenHoldings from "./TokenHoldings";
-import TokenSelector from "./TokenSelector";
-import { InlineToast } from "./ui/InlineToast";
+import { useAccount } from 'wagmi';
+import { clearLocalStorage } from '~/utils/tokenUtils';
+import { TARGET_TOKENS } from '../configs/constants';
+import { logError } from '../lib/logger';
+import { useSweep } from '../lib/useSweep';
+import { useTokenRefresh } from '../lib/useTokenRefresh';
+import { useTokenSelection } from '../lib/useTokenSelection';
+import { useTotalValue } from '../lib/useTotalValue';
+import { type TipConfig, type TokenSymbol } from '../types';
+import ActionButtons from './ActionButtons';
+import NavBar from './NavBar';
+import { usePortfolio } from './providers/PortfolioProvider';
+import SwapConfirmationModal from './SwapConfirmationModal';
+import TipModal from './TipModal';
+import TokenHoldings from './TokenHoldings';
+import TokenSelector from './TokenSelector';
+import { InlineToast } from './ui/InlineToast';
 
 interface WalletSweepProps {
   onReady?: () => void;
@@ -33,19 +33,27 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
 
   const { isConnected, address } = useAccount();
   const readyCalled = useRef(false);
-  const [targetToken, setTargetToken] = useState<TokenSymbol>("ETH");
+  const [targetToken, setTargetToken] = useState<TokenSymbol>('ETH');
   const [showTipModal, setShowTipModal] = useState(false);
   const [tipConfig, setTipConfig] = useState<TipConfig>({
-    amount: "0.5",
-    currency: "USDC",
+    amount: '0.5',
+    currency: 'USDC',
   });
 
-  const { refreshing, refreshKey, handleRefresh } = useTokenRefresh(refreshBalances);
+  const { refreshing, refreshKey, handleRefresh } =
+    useTokenRefresh(refreshBalances);
 
-  const { sweep, isLoading: sweepLoading, error: sweepError, swapStatus } = useSweep(handleRefresh);
+  const {
+    sweep,
+    isLoading: sweepLoading,
+    error: sweepError,
+    swapStatus,
+  } = useSweep(handleRefresh);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const filteredTokens = significantTokens.filter(t => t.symbol !== targetToken);
+  const filteredTokens = significantTokens.filter(
+    (t) => t.symbol !== targetToken,
+  );
 
   const {
     selectedTokens,
@@ -55,16 +63,20 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     isAllSelected,
   } = useTokenSelection(filteredTokens);
 
-  const validSelectedTokens = selectedTokens.filter(t => t.symbol !== targetToken);
+  const validSelectedTokens = selectedTokens.filter(
+    (t) => t.symbol !== targetToken,
+  );
 
   useEffect(() => {
-    const targetSelected = selectedTokens.some(t => t.symbol === targetToken);
+    const targetSelected = selectedTokens.some((t) => t.symbol === targetToken);
     if (targetSelected) {
-      const tokensToKeep = selectedTokens.filter(t => t.symbol !== targetToken);
+      const tokensToKeep = selectedTokens.filter(
+        (t) => t.symbol !== targetToken,
+      );
       if (tokensToKeep.length === 0) {
         clearSelection();
       } else {
-        const target = selectedTokens.find(t => t.symbol === targetToken);
+        const target = selectedTokens.find((t) => t.symbol === targetToken);
         if (target) toggleToken(target);
       }
     }
@@ -89,9 +101,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
   }, [onReady, isConnected, tokensLoading, pricesLoaded]);
 
   useEffect(() => {
-    if (sweepError) {
-      toast.error(sweepError);
-    }
+    if (sweepError) toast.error(sweepError);
   }, [sweepError]);
 
   useEffect(() => {
@@ -114,21 +124,23 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
 
     setShowConfirmation(true);
 
+    const uiAmounts = selectedTokens.map((t) => t.amount);
+    const rawAmounts = selectedTokens.map((t) => t.bigIntAmount);
     const tokenAddresses = selectedTokens.map((t) => t.contractAddress);
-    const amounts = selectedTokens.map((t) => t.balance);
 
-    const targetAddress = TARGET_TOKENS.find((t) => t.symbol === targetToken)
-      ?.address;
+    const targetAddress = TARGET_TOKENS.find(
+      (t) => t.symbol === targetToken,
+    )?.address;
     if (!targetAddress) {
-      logError("Invalid target token");
+      logError('Invalid target token');
       return;
     }
 
     try {
-      await sweep(tokenAddresses, targetAddress, amounts);
+      await sweep(tokenAddresses, targetAddress, uiAmounts, rawAmounts);
       clearSelection();
     } catch (err) {
-      logError("Sweep failed:", err);
+      logError('Sweep failed:', err);
     }
   };
 
@@ -142,7 +154,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
 
   return (
     <div className="w-full min-h-screen bg-[#1A1523] flex flex-col items-center py-0">
-      <div className="w-full max-w-xl px-4">   
+      <div className="w-full max-w-xl px-4">
         <NavBar onRefresh={handleRefresh} isRefreshing={refreshing} />
 
         <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg">
@@ -161,7 +173,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
                 onClick={toggleAll}
                 className="px-2 py-1 rounded-md text-[#9F7AEA] border border-transparent hover:border-[#9F7AEA] text-xs font-medium transition-colors focus:outline-none"
               >
-                {isAllSelected ? "Unselect All" : "Select All"}
+                {isAllSelected ? 'Unselect All' : 'Select All'}
               </button>
             </div>
 
@@ -189,7 +201,9 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
               isLoading={sweepLoading}
               selectedTokensCount={validSelectedTokens.length}
               targetToken={targetToken}
-              isTargetTokenSelected={selectedTokens.some(t => t.symbol === targetToken)}
+              isTargetTokenSelected={selectedTokens.some(
+                (t) => t.symbol === targetToken,
+              )}
             />
 
             {sweepError && (

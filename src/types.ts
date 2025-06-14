@@ -23,10 +23,15 @@ export type SwapStatus = {
 };
 
 export type TokenInfo = {
-    contractAddress: string;
-    symbol: string;
-    name: string;
-    logo: string | null;
-    balance: string;
-    decimals: number;
-}; 
+  contractAddress: string;
+  symbol: string;
+  name: string;
+  logo: string | null;
+  decimals: number;
+  /** Raw balance straight from the chain (base units). */
+  bigIntAmount: bigint;
+  /** Human-readable balance (decimals already applied). */
+  amount: string;
+  /** Deprecated – kept for backward compatibility. */
+  balance?: string;
+};
