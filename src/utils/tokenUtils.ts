@@ -16,6 +16,10 @@ export function blacklistToken(address: string): void {
     }
 }
 
+export function clearLocalStorage(): void {
+    localStorage.clear();
+}
+
 export function removeSignificantToken(contractAddress: string): void {
   try {
     const cached = localStorage.getItem("cachedPortfolioData");

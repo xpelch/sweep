@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from 'sonner';
 import { useAccount } from "wagmi";
+import { clearLocalStorage } from "~/utils/tokenUtils";
 import { TARGET_TOKENS } from "../configs/constants";
 import { logError } from "../lib/logger";
 import { useSweep } from "../lib/useSweep";
@@ -94,7 +95,13 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
   }, [sweepError]);
 
   useEffect(() => {
-    if (address && address !== prevAddress.current) {
+    if (!address) {
+      clearLocalStorage();
+      prevAddress.current = undefined;
+      return;
+    }
+    if (address !== prevAddress.current) {
+      clearLocalStorage();
       refreshBalances();
       prevAddress.current = address;
     }
