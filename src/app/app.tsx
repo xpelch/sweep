@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Providers } from "./providers";
-import WalletSweep from "~/components/WalletSweep";
 import type { Session } from "next-auth";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
+import WalletSweep from "~/components/WalletSweep";
+import { Providers } from "./providers";
 
 export default function App({ session }: { session: Session | null }) {
   const [ready, setReady] = useState(false);
@@ -22,7 +21,7 @@ export default function App({ session }: { session: Session | null }) {
       <main className="min-h-screen bg-[#18122B] flex items-center justify-center relative">
         {showSplash ? (
           <div className="flex flex-col items-center justify-center w-full h-full">
-            <Image src="/icon.png" alt="Sweep Logo" width={140} height={140} className="rounded-2xl" priority />
+            <Image src="/icon-no-background.png" alt="Sweep Logo" width={140} height={140} className="rounded-2xl" priority />
           </div>
         ) : (
           <>

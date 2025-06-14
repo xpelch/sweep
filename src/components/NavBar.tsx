@@ -14,7 +14,7 @@ export default function NavBar({ onRefresh, isRefreshing }: NavBarProps) {
                 Sweep
                 <span className="inline-block align-middle">
                     <Image
-                        src="/icon.png"
+                        src="/icon-no-background.png"
                         alt="Sweep Icon"
                         width={32}
                         height={32}
