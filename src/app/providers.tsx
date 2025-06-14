@@ -18,7 +18,7 @@ export function Providers({ session, children }: { session: Session | null, chil
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
-        <MiniAppProvider analyticsEnabled={false}>
+        <MiniAppProvider analyticsEnabled={true}>
           <PortfolioProvider>
           <FarcasterReady />
             {children}

@@ -81,3 +81,16 @@ body {
   border-color: #60a5fa !important;
   color: #bae6fd !important;
 }
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}

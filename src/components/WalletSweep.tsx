@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import PullToRefresh from 'react-simple-pull-to-refresh';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 import { clearLocalStorage } from '~/utils/tokenUtils';
@@ -13,6 +14,7 @@ import { useTotalValue } from '../lib/useTotalValue';
 import { type TipConfig, type TokenSymbol } from '../types/index';
 import ActionButtons from './ActionButtons';
 import NavBar from './NavBar';
+import { BubblySpinner } from './providers/LoadingProvider';
 import { usePortfolio } from './providers/PortfolioProvider';
 import SwapConfirmationModal from './SwapConfirmationModal';
 import TipModal from './TipModal';
@@ -157,70 +159,72 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
       <div className="w-full max-w-xl px-4">
         <NavBar onRefresh={handleRefresh} isRefreshing={refreshing} />
 
-        <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg">
-          <div className="space-y-4">
-            <TokenSelector
-              selectedToken={targetToken}
-              onSelectToken={setTargetToken}
-            />
+        <PullToRefresh onRefresh={handleRefresh} pullingContent={<div className="text-center text-[#9F7AEA] py-2"></div>} refreshingContent={<BubblySpinner />}>
+          <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg">
+            <div className="space-y-4">
+              <TokenSelector
+                selectedToken={targetToken}
+                onSelectToken={setTargetToken}
+              />
 
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-white">
-                Token Balances
-              </h3>
-              <button
-                type="button"
-                onClick={toggleAll}
-                className="px-2 py-1 rounded-md text-[#9F7AEA] border border-transparent hover:border-[#9F7AEA] text-xs font-medium transition-colors focus:outline-none"
-              >
-                {isAllSelected ? 'Unselect All' : 'Select All'}
-              </button>
-            </div>
-
-            <TokenHoldings
-              key={refreshKey}
-              selectedTokens={selectedTokens}
-              onToggleToken={toggleToken}
-              onPricesUpdate={handlePricesUpdate}
-              tokens={significantTokens}
-              targetToken={targetToken}
-            />
-
-            <div className="my-2">
-              <hr className="border-[#32275A] mb-2" />
-              <div className="flex justify-between items-center">
-                <span className="text-white text-base font-bold">
-                  Total: ${totalValue.toFixed(2)}
-                </span>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold text-white">
+                  Token Balances
+                </h3>
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="px-2 py-1 rounded-md text-[#9F7AEA] border border-transparent hover:border-[#9F7AEA] text-xs font-medium transition-colors focus:outline-none"
+                >
+                  {isAllSelected ? 'Unselect All' : 'Select All'}
+                </button>
               </div>
-            </div>
 
-            <ActionButtons
-              onSweep={handleSweep}
-              onTip={() => setShowTipModal(true)}
-              isLoading={sweepLoading}
-              selectedTokensCount={validSelectedTokens.length}
-              targetToken={targetToken}
-              isTargetTokenSelected={selectedTokens.some(
-                (t) => t.symbol === targetToken,
+              <TokenHoldings
+                key={refreshKey}
+                selectedTokens={selectedTokens}
+                onToggleToken={toggleToken}
+                onPricesUpdate={handlePricesUpdate}
+                tokens={significantTokens}
+                targetToken={targetToken}
+              />
+
+              <div className="my-2">
+                <hr className="border-[#32275A] mb-2" />
+                <div className="flex justify-between items-center">
+                  <span className="text-white text-base font-bold">
+                    Total: ${totalValue.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <ActionButtons
+                onSweep={handleSweep}
+                onTip={() => setShowTipModal(true)}
+                isLoading={sweepLoading}
+                selectedTokensCount={validSelectedTokens.length}
+                targetToken={targetToken}
+                isTargetTokenSelected={selectedTokens.some(
+                  (t) => t.symbol === targetToken,
+                )}
+              />
+
+              {sweepError && (
+                <div className="mt-2">
+                  <InlineToast type="error" message={sweepError} />
+                </div>
               )}
-            />
 
-            {sweepError && (
-              <div className="mt-2">
-                <InlineToast type="error" message={sweepError} />
-              </div>
-            )}
-
-            <TipModal
-              open={showTipModal}
-              onClose={() => setShowTipModal(false)}
-              onSend={handleSendTip}
-              initialAmount={tipConfig.amount}
-              initialCurrency={tipConfig.currency}
-            />
+              <TipModal
+                open={showTipModal}
+                onClose={() => setShowTipModal(false)}
+                onSend={handleSendTip}
+                initialAmount={tipConfig.amount}
+                initialCurrency={tipConfig.currency}
+              />
+            </div>
           </div>
-        </div>
+        </PullToRefresh>
       </div>
 
       <SwapConfirmationModal show={showConfirmation} swapStatus={swapStatus} />
