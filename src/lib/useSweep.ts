@@ -85,9 +85,8 @@ export function useSweep(onRefresh?: () => void) {
             abi: ERC20_ABI,
             functionName: 'decimals',
           });
-          
-          let amount = parseUnits(uiAmount, Number(decimals));
-          amount = (amount * 99n) / 100n;
+
+          const amount = parseUnits(uiAmount, Number(decimals));
 
           if (amount === 0n) {
             processed.push({
