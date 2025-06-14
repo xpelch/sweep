@@ -19,7 +19,7 @@ export default function TokenSelector({ selectedToken, onSelectToken }: TokenSel
                         key={target.symbol}
                         type="button"
                         onClick={() => onSelectToken(target.symbol as TokenSymbol)}
-                        className={`flex items-center gap-2 w-1/2 justify-center px-4 py-3 rounded-xl border-2 transition-colors font-semibold text-white text-base bg-white/5 hover:bg-white/10 focus:outline-none ${
+                        className={`flex items-center gap-2 w-1/3 justify-center px-4 py-3 rounded-xl border-2 transition-colors font-semibold text-white text-base bg-white/5 hover:bg-white/10 focus:outline-none ${
                             selectedToken === target.symbol
                                 ? 'border-[#9F7AEA] shadow-[0_0_6px_2px_rgba(159,122,234,0.4)] bg-[#231942]'
                                 : 'border-[#32275A]'
@@ -28,8 +28,8 @@ export default function TokenSelector({ selectedToken, onSelectToken }: TokenSel
                         <Image
                             src={target.logo}
                             alt={target.symbol}
-                            width={36}
-                            height={36}
+                            width={24}
+                            height={24}
                             className="rounded-full bg-white p-0.5 border-2 border-[#9F7AEA]"
                             unoptimized
                         />

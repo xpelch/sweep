@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import PullToRefresh from 'react-simple-pull-to-refresh';
+import { PullToRefreshify } from 'react-pull-to-refreshify';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 import { clearLocalStorage } from '~/utils/tokenUtils';
@@ -42,7 +42,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     currency: 'USDC',
   });
 
-  const { refreshing, refreshKey, handleRefresh } =
+  const { refreshing, refreshingDrag, refreshKey, handleRefresh, handleDragRefresh } =
     useTokenRefresh(refreshBalances);
 
   const {
@@ -159,7 +159,11 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
       <div className="w-full max-w-xl px-4">
         <NavBar onRefresh={handleRefresh} isRefreshing={refreshing} />
 
-        <PullToRefresh onRefresh={handleRefresh} pullingContent={<div className="text-center text-[#9F7AEA] py-2"></div>} refreshingContent={<BubblySpinner />}>
+        <PullToRefreshify
+          refreshing={refreshingDrag}
+          onRefresh={handleDragRefresh}
+          renderText={() => <BubblySpinner />}
+        >
           <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg">
             <div className="space-y-4">
               <TokenSelector
@@ -224,7 +228,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
               />
             </div>
           </div>
-        </PullToRefresh>
+        </PullToRefreshify>
       </div>
 
       <SwapConfirmationModal show={showConfirmation} swapStatus={swapStatus} />

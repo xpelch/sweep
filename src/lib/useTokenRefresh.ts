@@ -9,6 +9,7 @@ import { useState } from "react";
 export function useTokenRefresh(onExternalRefresh?: () => Promise<void>) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshingDrag, setRefreshingDrag] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -20,5 +21,13 @@ export function useTokenRefresh(onExternalRefresh?: () => Promise<void>) {
     }
   };
 
-  return { refreshKey, refreshing, handleRefresh };
+  const handleDragRefresh = async () => {
+    setRefreshingDrag(true);
+    try {
+      if (onExternalRefresh) await onExternalRefresh();
+    } finally {
+      setRefreshingDrag(false);
+    }
+  };
+  return { refreshKey, refreshing, refreshingDrag, handleRefresh, handleDragRefresh };
 }

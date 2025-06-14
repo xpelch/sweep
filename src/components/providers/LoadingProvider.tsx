@@ -32,7 +32,7 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
 
 export function BubblySpinner() {
   return (
-    <div className="flex items-center justify-center space-x-2 h-8 mt-4">
+    <div className="flex items-center justify-center space-x-2 h-8 my-2">
       <div className="w-3 h-3 bg-[#9F7AEA] rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
       <div className="w-3 h-3 bg-[#B8B4D8] rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
       <div className="w-3 h-3 bg-[#9F7AEA] rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
