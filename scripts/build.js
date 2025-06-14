@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { mnemonicToAccount } from 'viem/accounts';
-import { fileURLToPath } from 'url';
-import inquirer from 'inquirer';
-import dotenv from 'dotenv';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import inquirer from 'inquirer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { mnemonicToAccount } from 'viem/accounts';
 
 // ANSI color codes
 const yellow = '\x1b[33m';
@@ -177,7 +177,7 @@ async function generateFarcasterMetadata(domain, fid, accountAddress, seedPhrase
       imageUrl: `https://${domain}/api/opengraph-image`,
       buttonTitle: process.env.NEXT_PUBLIC_FRAME_BUTTON_TEXT,
       splashImageUrl: `https://${domain}/splash.png`,
-      splashBackgroundColor: "#f7f7f7",
+      splashBackgroundColor: "#18122B",
       webhookUrl,
       description: process.env.NEXT_PUBLIC_FRAME_DESCRIPTION,
       primaryCategory: process.env.NEXT_PUBLIC_FRAME_PRIMARY_CATEGORY,
