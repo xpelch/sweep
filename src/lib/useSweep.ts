@@ -51,18 +51,20 @@ export function useSweep(onRefresh?: () => void) {
       setSwapStatus({ status: 'confirming', processedTokens: [] });
 
       const processed: NonNullable<SwapStatus['processedTokens']> = [];
-      const quotes: (SwapQuote | null)[] = [];
 
-      /* ---------------- Quotes (throttled) ---------------- */
+      /* ------------------------------------------------------------------ */
+      /* Loop token par token : Quote → Approve (si besoin) → Swap → Statut */
+      /* ------------------------------------------------------------------ */
       for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
+        const uiAmount = amounts[i];
         const symbol =
           selected?.find((t) => t.contractAddress.toLowerCase() === token.toLowerCase())
             ?.symbol ??
           TARGET_TOKENS.find((t) => t.address.toLowerCase() === token.toLowerCase())
             ?.symbol;
-        const uiAmount = amounts[i];
 
+        /* --------- Cas natif : on ignore (rien à swap) ------------------ */
         if (token.toLowerCase() === ZERO_ADDRESS) {
           processed.push({
             address: token,
@@ -71,21 +73,21 @@ export function useSweep(onRefresh?: () => void) {
             reason: 'Native token',
             symbol,
           });
-          quotes.push(null);
           updateStatus(processed);
           await sleep(REQ_DELAY);
           continue;
         }
 
         try {
+          /* --------- 1. Quote (0x) ------------------------------------- */
           const decimals = await publicClient.readContract({
             address: token as Address,
             abi: ERC20_ABI,
             functionName: 'decimals',
           });
-
           const amount = parseUnits(uiAmount, Number(decimals));
-          const qs = new URLSearchParams({
+
+          const params = new URLSearchParams({
             chainId: '8453',
             sellToken: token,
             buyToken: targetToken,
@@ -93,7 +95,7 @@ export function useSweep(onRefresh?: () => void) {
             slippageBps: '500',
             taker: walletClient.account.address,
           });
-          const res = await fetch(`/api/0x-quote?${qs.toString()}`);
+          const res = await fetch(`/api/0x-quote?${params.toString()}`);
 
           if (res.status === 503) {
             blacklistToken(token);
@@ -106,7 +108,6 @@ export function useSweep(onRefresh?: () => void) {
               reason: 'No liquidity',
               symbol,
             });
-            quotes.push(null);
             updateStatus(processed);
             await sleep(REQ_DELAY);
             continue;
@@ -118,7 +119,7 @@ export function useSweep(onRefresh?: () => void) {
           if (!transaction?.to)
             throw new Error('Quote response missing "to" address');
 
-          quotes.push({
+          const quote: SwapQuote = {
             token,
             amount,
             allowanceTarget: transaction.to,
@@ -127,7 +128,7 @@ export function useSweep(onRefresh?: () => void) {
               data: transaction.data as Hex,
               value: transaction.value ? BigInt(transaction.value) : 0n,
             },
-          });
+          };
 
           processed.push({
             address: token,
@@ -136,110 +137,79 @@ export function useSweep(onRefresh?: () => void) {
             symbol,
           });
           updateStatus(processed);
+
+          /* --------- 2. Approve si nécessaire -------------------------- */
+          if (quote.allowanceTarget) {
+            const allowance = await publicClient.readContract({
+              address: quote.token as Address,
+              abi: ERC20_ABI,
+              functionName: 'allowance',
+              args: [walletClient.account.address, quote.allowanceTarget as Address],
+            });
+            if (BigInt(allowance) < quote.amount) {
+              const approveHash = await walletClient.writeContract({
+                address: quote.token as Address,
+                abi: ERC20_ABI,
+                functionName: 'approve',
+                args: [quote.allowanceTarget as Address, MAX_UINT256],
+              });
+              await publicClient.waitForTransactionReceipt({ hash: approveHash });
+            }
+          }
+
+          /* --------- 3. Swap ------------------------------------------ */
+          const swapHash = await walletClient.sendTransaction({
+            to: quote.tx.to,
+            data: quote.tx.data,
+            value: quote.tx.value,
+          });
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash });
+
+          const idx = processed.findIndex((t) => t.address === quote.token);
+
+          if (receipt.status !== 'success') {
+            if (
+              receipt.status === 'reverted' &&
+              Array.isArray(receipt.logs) &&
+              receipt.logs.length === 0
+            ) {
+              blacklistToken(quote.token);
+              processed[idx] = {
+                ...processed[idx],
+                status: 'skipped',
+                reason: 'Low liquidity or Token not supported by 0x',
+              };
+            } else {
+              processed[idx] = {
+                ...processed[idx],
+                status: 'failed',
+                reason: 'Transaction reverted',
+              };
+            }
+          } else {
+            processed[idx].status = 'success';
+          }
         } catch (err) {
-          logError('quote error', err);
+          logError('sweep error', err);
           processed.push({
             address: token,
             amount: uiAmount,
             status: 'failed',
-            reason: err instanceof Error ? err.message : 'Quote error',
+            reason: err instanceof Error ? err.message : 'Unknown error',
             symbol,
           });
-          quotes.push(null);
-          updateStatus(processed);
         }
-        await sleep(REQ_DELAY); // throttle ⇒ 1 req/s
-      }
 
-      /* --------------- Approvals & Swaps (unchanged) ---------------- */
-      for (const q of quotes) {
-        if (!q) continue;
-        /* -- approval -- */
-        try {
-          if (q.allowanceTarget) {
-            const allowance = await publicClient.readContract({
-              address: q.token as Address,
-              abi: ERC20_ABI,
-              functionName: 'allowance',
-              args: [walletClient.account.address, q.allowanceTarget as Address],
-            });
-            if (BigInt(allowance) < q.amount) {
-              const hash = await walletClient.writeContract({
-                address: q.token as Address,
-                abi: ERC20_ABI,
-                functionName: 'approve',
-                args: [q.allowanceTarget as Address, MAX_UINT256],
-              });
-              await publicClient.waitForTransactionReceipt({ hash });
-            }
-          }
-          /* -- swap -- */
-          try {
-            const swapHash = await walletClient.sendTransaction({
-              to: q.tx.to,
-              data: q.tx.data,
-              value: q.tx.value,
-            });
-            const receipt = await publicClient.waitForTransactionReceipt({ hash: swapHash });
-            const idx = processed.findIndex((t) => t.address === q.token);
-            
-            if (receipt.status !== 'success') {
-              // Si revert et logs vide => low liquidity
-              if (receipt.status === 'reverted' && Array.isArray(receipt.logs) && receipt.logs.length === 0) {
-                blacklistToken(q.token);
-                processed[idx] = {
-                  ...processed[idx],
-                  status: 'skipped',
-                  reason: 'Low liquidity or Token not supported by 0x',
-                };
-              } else {
-                // Sinon, failed avec raison générique
-                processed[idx] = {
-                  ...processed[idx],
-                  status: 'failed',
-                  reason: 'Transaction reverted',
-                };
-              }
-            } else if (idx !== -1) {
-              processed[idx].status = 'success';
-            }
-          } catch (err) {
-            const idx = processed.findIndex((t) => t.address === q.token);
-            const errMsg = err instanceof Error ? err.message : String(err);
-            if (idx !== -1) {
-              if (errMsg.toLowerCase().includes('arithmetic underflow')) {
-                processed[idx] = {
-                  ...processed[idx],
-                  status: 'skipped',
-                  reason: 'Arithmetic underflow',
-                };
-              } else {
-                processed[idx] = {
-                  ...processed[idx],
-                  status: 'failed',
-                  reason: errMsg,
-                };
-              }
-            }
-          }
-        } catch (err) {
-          const idx = processed.findIndex((t) => t.address === q.token);
-          if (idx !== -1) {
-            processed[idx] = {
-              ...processed[idx],
-              status: 'failed',
-              reason: err instanceof Error ? err.message : 'Swap error',
-            };
-          }
-        }
         updateStatus(processed);
+        await sleep(REQ_DELAY); // throttle => 1 req/s
       }
 
+      /* ------------------------ Fin du lot ---------------------------- */
       setSwapStatus({ status: 'success', processedTokens: processed });
       onRefresh?.();
       setIsLoading(false);
     },
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [publicClient, walletClient],
   );
 
