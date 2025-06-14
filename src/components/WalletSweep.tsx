@@ -10,7 +10,7 @@ import { useSweep } from '../lib/useSweep';
 import { useTokenRefresh } from '../lib/useTokenRefresh';
 import { useTokenSelection } from '../lib/useTokenSelection';
 import { useTotalValue } from '../lib/useTotalValue';
-import { type TipConfig, type TokenSymbol } from '../types';
+import { type TipConfig, type TokenSymbol } from '../types/index';
 import ActionButtons from './ActionButtons';
 import NavBar from './NavBar';
 import { usePortfolio } from './providers/PortfolioProvider';
