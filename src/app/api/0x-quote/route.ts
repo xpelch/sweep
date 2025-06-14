@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   // Ajoute les paramètres pour les frais
   // Note: '0x...' est l'adresse de ton allowance holder/wallet
   params.append('swapFeeRecipient', '0x78C825b3bBD9C08d0809C327ab042764C4D327c5');
-  params.append('swapFeeBps', '50'); // 0.5%
+  params.append('swapFeeBps', '100'); // 1%
   params.append('swapFeeToken', params.get('buyToken') || '');
 
   const quoteUrl = 'https://api.0x.org/swap/allowance-holder/quote?' + params.toString();
