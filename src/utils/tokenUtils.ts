@@ -45,7 +45,7 @@ export function calculateTotalValue(tokens: TokenInfo[], prices: Record<string, 
     return tokens.reduce((sum, token) => {
         const price = prices[token.contractAddress?.toLowerCase()];
         if (!price) return sum;
-        return sum + parseFloat(token.balance) * price;
+        return sum + parseFloat(token.amount) * price;
     }, 0);
 }
 
