@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { APP_URL, APP_NAME, APP_DESCRIPTION } from "~/lib/constants";
+import { APP_DESCRIPTION, APP_NAME, APP_URL } from "~/lib/constants";
 import { getFrameEmbedMetadata } from "~/lib/utils";
 export const revalidate = 300;
 
