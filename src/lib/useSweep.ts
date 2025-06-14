@@ -85,7 +85,22 @@ export function useSweep(onRefresh?: () => void) {
             abi: ERC20_ABI,
             functionName: 'decimals',
           });
-          const amount = parseUnits(uiAmount, Number(decimals));
+          
+          let amount = parseUnits(uiAmount, Number(decimals));
+          amount = (amount * 99n) / 100n;
+
+          if (amount === 0n) {
+            processed.push({
+              address: token,
+              amount: uiAmount,
+              status: 'skipped',
+              reason: 'Amount too small to sweep',
+              symbol,
+            });
+            updateStatus(processed);
+            await sleep(REQ_DELAY);
+            continue;
+          }
 
           const params = new URLSearchParams({
             chainId: '8453',
