@@ -94,6 +94,7 @@ export function useSweep(onRefresh?: () => void) {
             sellAmount: amount.toString(),
             slippageBps: '500',
             taker: walletClient.account.address,
+            sellEntireBalance: 'true',
           });
           const res = await fetch(`/api/0x-quote?${params.toString()}`);
 
