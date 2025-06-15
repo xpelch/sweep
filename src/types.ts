@@ -80,6 +80,9 @@ export type SwapStatus = {
     }[];
 };
 
+export type TokenSymbol = 'ETH' | 'USDC' | 'PRO';
+
+
 export type TokenInfo = {
   contractAddress: string;
   symbol: string;

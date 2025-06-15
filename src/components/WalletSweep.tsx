@@ -107,7 +107,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     toggleAll,
     clearSelection,
     isAllSelected,
-  } = useTokenSelection(filteredTokens);
+  } = useTokenSelection(filteredTokens, targetToken);
 
   const validSelectedTokens = selectedTokens.filter(
     (t) => t.symbol !== targetToken,
