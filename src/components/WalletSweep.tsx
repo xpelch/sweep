@@ -28,6 +28,7 @@ import {
 import { usePortfolio } from './providers/PortfolioProvider';
 
 import ActionButtons from './ActionButtons';
+import AddFrameButton from './actions/AddFrameButton';
 import NavBar from './NavBar';
 import PortfolioSummary from './PortfolioSummary';
 import SwapConfirmationModal from './SwapConfirmationModal';
@@ -231,8 +232,11 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
           portfolioUsd={portfolioUsd}
           ethBalNumber={ethBalNumber}
         />
-        <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg">
-          <div className="space-y-4">
+        <div className="flex items-center justify-end mb-3">
+            <AddFrameButton />
+        </div>
+        <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg relative">   
+          <div className="space-y-2">
             <TokenSelector
               selectedToken={targetToken}
               onSelectToken={setTargetToken}

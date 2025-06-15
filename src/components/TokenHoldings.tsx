@@ -52,7 +52,7 @@ export default function TokenHoldings({
     return <div className="text-[#b8b4d8]">No tokens found.</div>;
 
   return (
-    <div className="flex flex-col gap-1 max-h-52 overflow-y-auto mt-3 px-1">
+    <div className="flex flex-col gap-1 max-h-56 overflow-y-auto mt-2 px-1">
       {tokens.map((token) => {
         const isSelected = selectedSet.has(token.contractAddress);
         const isTarget = targetToken === token.symbol;
