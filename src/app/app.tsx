@@ -24,7 +24,7 @@ export default function App({ session }: { session: Session | null }) {
         <main className="min-h-screen bg-[#18122B] flex items-center justify-center relative">
           {showSplash ? (
             <div className="flex flex-col items-center justify-center w-full h-full">
-              <Image src="/icon-no-background.png" alt="Sweep Logo" width={120} height={120} className="rounded-2xl" priority />
+              <Image src="/icon-no-background.png" alt="Sweep Logo" width={80} height={80} className="rounded-2xl" priority />
             </div>
           ) : (
             <Suspense fallback={<SuspenseFallback />}>

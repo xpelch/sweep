@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FaEthereum } from "react-icons/fa";
 
 import { toast } from 'sonner';
 import {
@@ -28,13 +27,16 @@ import {
 } from '../types/index';
 import { usePortfolio } from './providers/PortfolioProvider';
 
-import { formatUsd } from './../utils/formatUtils';
 import ActionButtons from './ActionButtons';
 import NavBar from './NavBar';
+import PortfolioSummary from './PortfolioSummary';
 import SwapConfirmationModal from './SwapConfirmationModal';
+import SweepPercentageSlider from './SweepPercentageSlider';
 import TipModal from './TipModal';
+import TokenBalancesHeader from './TokenBalancesHeader';
 import TokenHoldings from './TokenHoldings';
 import TokenSelector from './TokenSelector';
+import TotalSweepValue from './TotalSweepValue';
 import { InlineToast } from './ui/InlineToast';
 
 /* ---------------------------------------------------------------------- */
@@ -224,86 +226,19 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
       <div className="w-full max-w-xl px-4">
         {/* NAVBAR + global refresh */}
         <NavBar onRefresh={handleRefresh} isRefreshing={refreshing} />
-        {(portfolioEth !== undefined && ethBalNumber !== undefined) && (
-          <div className="flex justify-between text-xs text-[#B8B4D8] mb-2 space-y-0.5">
-            <div className="text-left flex items-center">
-              Holdings ≈ {portfolioEth.toFixed(4)} <FaEthereum className="inline-block mr-1"/> | ${formatUsd(portfolioUsd)}
-            </div>
-            <div className="text-right flex items-center">
-             ETH: {ethBalNumber.toFixed(4)} <FaEthereum className="inline-block mr-0.3"/>
-            </div>
-          </div>
-        )}
-        {/* MAIN CARD */}
+        <PortfolioSummary
+          portfolioEth={portfolioEth}
+          portfolioUsd={portfolioUsd}
+          ethBalNumber={ethBalNumber}
+        />
         <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg">
-                 {/* Minimalistic portfolio ETH line */}
-
-
           <div className="space-y-4">
-            {/* TARGET TOKEN SELECTOR */}
             <TokenSelector
               selectedToken={targetToken}
               onSelectToken={setTargetToken}
             />
-
-            {/* GLOBAL PERCENTAGE SLIDER -------------------------------- */}
-            <div className="w-full space-y-2">
-              <label
-                htmlFor="sweepPct"
-                className="text-sm font-medium text-[#B8B4D8]"
-              >
-                Sweep percentage&nbsp;
-                <span className="font-bold text-white">{sweepPct}%</span>
-              </label>
-
-              <div className="relative h-2 w-full">
-                {/* track */}
-                <div className="absolute inset-y-1/2 left-0 right-0 h-2 -translate-y-1/2 rounded-full bg-[#32275A]" />
-
-                {/* thumb */}
-                <div
-                  className="absolute top-1/2 -translate-y-1/2"
-                  style={{
-                    left: `calc(${sweepPct}% - 0.5rem)`,
-                  }}
-                >
-                  <div
-                    className="h-3.5 w-3.5 rounded-sm bg-[#9F7AEA] shadow-md border border-white transition-transform duration-300 ease-linear"
-                    style={{
-                      transform: `rotate(${45 + sweepPct * 0.9}deg)`,
-                    }}
-                  />
-                </div>
-
-                {/* invisible range input */}
-                <input
-                  id="sweepPct"
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={sweepPct}
-                  onChange={(e) => setSweepPct(Number(e.target.value))}
-                  className="absolute inset-0 h-8 w-full cursor-pointer opacity-0"
-                />
-              </div>
-            </div>
-
-            {/* TOKEN BALANCES HEADER + SELECT/UNSELECT */}
-            <div className="flex items-center justify-between">
-              <h3 className="text-md font-semibold text-white">
-                Token Balances
-              </h3>
-              <button
-                type="button"
-                onClick={toggleAll}
-                className="px-2 py-1 rounded-md text-[#9F7AEA] border border-transparent hover:border-[#9F7AEA] text-xs font-medium transition-colors focus:outline-none"
-              >
-                {isAllSelected ? 'Unselect All' : 'Select All'}
-              </button>
-            </div>
-
-            {/* TOKEN LIST */}
+            <SweepPercentageSlider sweepPct={sweepPct} setSweepPct={setSweepPct} />
+            <TokenBalancesHeader isAllSelected={isAllSelected} toggleAll={toggleAll} />
             <TokenHoldings
               key={refreshKey}
               selectedTokens={selectedTokens}
@@ -312,18 +247,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
               tokens={significantTokens}
               targetToken={targetToken}
             />
-
-            {/* TOTAL VALUE (AFTER % APPLIED) */}
-            <div className="my-2">
-              <hr className="border-[#32275A] mb-2" />
-              <div className="flex justify-between items-center">
-                <span className="text-white text-base font-bold">
-                  Total to sweep: ${totalSweepUsd.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {/* ACTIONS */}
+            <TotalSweepValue totalSweepUsd={totalSweepUsd} />
             <ActionButtons
               onSweep={handleSweep}
               onTip={() => setShowTipModal(true)}
@@ -342,7 +266,6 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
               </div>
             )}
 
-            {/* TIP MODAL */}
             <TipModal
               open={showTipModal}
               onClose={() => setShowTipModal(false)}
@@ -356,7 +279,6 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
         </div>
       </div>
 
-      {/* SWAP CONFIRMATION */}
       <SwapConfirmationModal show={showConfirmation} swapStatus={swapStatus} />
     </div>
   );
