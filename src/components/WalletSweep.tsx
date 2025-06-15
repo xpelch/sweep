@@ -27,6 +27,7 @@ import {
 } from '../types/index';
 import { usePortfolio } from './providers/PortfolioProvider';
 
+import { useMiniApp } from '@neynar/react';
 import ActionButtons from './ActionButtons';
 import AddFrameButton from './actions/AddFrameButton';
 import NavBar from './NavBar';
@@ -98,6 +99,9 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     error: sweepError,
     swapStatus,
   } = useSweep(handleRefresh);
+
+
+  const { added } = useMiniApp();
 
 
   const filteredTokens = significantTokens.filter(
@@ -232,7 +236,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
           portfolioUsd={portfolioUsd}
           ethBalNumber={ethBalNumber}
         />
-        <div className="flex items-center justify-end mb-3">
+        <div className="flex items-center justify-end mb-3" hidden={added}>
             <AddFrameButton />
         </div>
         <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full shadow-lg relative">   
