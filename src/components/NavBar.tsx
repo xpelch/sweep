@@ -9,7 +9,7 @@ interface NavBarProps {
 
 export default function NavBar({ onRefresh, isRefreshing }: NavBarProps) {
     return (
-        <div className="flex items-center justify-between pt-6 mb-6 sticky top-0 z-10 bg-[#1A1523]">
+        <div className="flex items-center justify-between pt-6 mb-3 sticky top-0 z-10 bg-[#1A1523]">
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2">
                 Sweep
                 <span className="inline-block align-middle">

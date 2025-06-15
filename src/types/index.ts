@@ -2,14 +2,16 @@ import { type Address } from 'viem';
 
 export type TokenSymbol = 'ETH' | 'USDC' | 'PRO';
 
-export interface TokenInfo {
-    contractAddress: string;
-    symbol: string;
-    name: string;
-    logo: string | null;
-    balance: string;
-    decimals: number;
-}
+export type TokenInfo = {
+  contractAddress: string;
+  symbol: string;
+  name: string;
+  logo: string | null;
+  decimals: number;
+  bigIntAmount: bigint;
+  amount: string;
+  balance?: string;
+};
 
 export interface TargetToken {
     symbol: TokenSymbol;

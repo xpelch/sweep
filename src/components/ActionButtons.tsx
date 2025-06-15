@@ -9,6 +9,7 @@ interface ActionButtonsProps {
     targetToken: TokenSymbol;
     isTargetTokenSelected?: boolean;
     hideTip?: boolean;
+    disableSweep?: boolean;
 }
 
 export default function ActionButtons({
@@ -19,6 +20,7 @@ export default function ActionButtons({
     targetToken,
     isTargetTokenSelected = false,
     hideTip = true,
+    disableSweep = false,
 }: ActionButtonsProps) {
     return (
         <div className="flex flex-row gap-3 mt-4">
@@ -34,7 +36,7 @@ export default function ActionButtons({
             )}
             <button
                 onClick={onSweep}
-                disabled={selectedTokensCount === 0 || isLoading || isTargetTokenSelected}
+                disabled={selectedTokensCount === 0 || isLoading || isTargetTokenSelected || disableSweep}
                 className={`${hideTip ? 'w-full' : 'w-5/6'} flex justify-center items-center py-3 px-4 border border-transparent rounded-2xl shadow-lg text-base font-semibold text-white bg-[#9F7AEA] hover:bg-[#7C5DFA] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9F7AEA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
             >
                 {isLoading ? 'Sweeping...' : `Sweep Tokens to ${targetToken}`}

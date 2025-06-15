@@ -1,6 +1,6 @@
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import type { TokenInfo } from "../lib/useAlchemyPortfolio";
+import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
+import type { TokenInfo } from '../lib/useAlchemyPortfolio';
 
 interface TokenHoldingsProps {
   selectedTokens: TokenInfo[];
@@ -10,18 +10,22 @@ interface TokenHoldingsProps {
   targetToken?: string;
 }
 
-// Add this helper to fetch cached prices from localStorage
-function getCachedTokenPrices(): { prices: Record<string, number>; timestamp: number } | null {
+/* ---------- helpers ---------- */
+
+const CACHE_KEY = 'cachedTokenPrices';
+
+function readCachedPrices(): Record<string, number> {
   try {
-    const raw = localStorage.getItem('cachedTokenPrices');
-    if (!raw) return null;
-    return JSON.parse(raw);
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return {};
+    const { prices } = JSON.parse(raw);
+    return prices ?? {};
   } catch {
-    return null;
+    return {};
   }
 }
 
-/* ---------- composant ---------- */
+/* ---------- component ---------- */
 
 export default function TokenHoldings({
   selectedTokens,
@@ -32,72 +36,88 @@ export default function TokenHoldings({
 }: TokenHoldingsProps) {
   const [prices, setPrices] = useState<Record<string, number>>({});
 
-  // Fetch prices from localStorage on mount/tokens change
-  // and call onPricesUpdate if provided
+  /* cache prices on mount / tokens change */
   useEffect(() => {
-    const cache = getCachedTokenPrices();
-    if (cache && cache.prices) {
-      setPrices(cache.prices);
-      if (onPricesUpdate) onPricesUpdate(cache.prices);
-    }
+    const cached = readCachedPrices();
+    setPrices(cached);
+    onPricesUpdate?.(cached);
   }, [tokens, onPricesUpdate]);
 
-  if (!tokens.length) return <div className="text-[#b8b4d8]">No tokens found.</div>;
+  const selectedSet = useMemo(
+    () => new Set(selectedTokens.map((t) => t.contractAddress)),
+    [selectedTokens],
+  );
+
+  if (!tokens.length)
+    return <div className="text-[#b8b4d8]">No tokens found.</div>;
 
   return (
-    <div className="flex flex-col gap-2 max-h-64 overflow-y-auto mt-3 px-1">
+    <div className="flex flex-col gap-1 max-h-52 overflow-y-auto mt-3 px-1">
       {tokens.map((token) => {
-        const isSelected = selectedTokens.some(
-          (t) => t.contractAddress === token.contractAddress,
-        );
+        const isSelected = selectedSet.has(token.contractAddress);
+        const isTarget = targetToken === token.symbol;
         const price = prices[token.contractAddress.toLowerCase()];
-        const value = price ? (parseFloat(token.amount) * price).toFixed(2) : "--";
-        const isTarget = targetToken && token.symbol === targetToken;
+        const usdValue =
+          price !== undefined
+            ? (Number(token.amount) * price).toFixed(2)
+            : '--';
 
         return (
           <button
             key={token.contractAddress}
             onClick={() => onToggleToken(token)}
+            disabled={isTarget}
             type="button"
-            disabled={!!isTarget}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded-xl border transition-colors bg-[#2B2340] shadow-[0_2px_8px_0_rgba(50,39,90,0.10)]
-              ${isSelected
-                ? "border-[#9F7AEA] shadow-[0_0_6px_2px_rgba(159,122,234,0.15)]"
-                : "border-[#32275A] hover:bg-[#32275A]"
-              } ${isTarget ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex items-center justify-between w-full px-3 py-2 rounded-lg border transition-colors bg-[#2B2340]
+              ${
+                isSelected
+                  ? 'border-[#9F7AEA] shadow-[0_0_6px_2px_rgba(159,122,234,0.15)]'
+                  : 'border-[#32275A] hover:bg-[#32275A]'
+              }
+              ${isTarget ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <div className="flex items-center gap-4">
+            {/* icon + symbol */}
+            <div className="flex items-center gap-3">
               {token.logo ? (
-                <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#9F7AEA] bg-white">
-                  <Image
-                    src={token.logo}
-                    alt={token.symbol}
-                    width={44}
-                    height={44}
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
+                <Image
+                  src={token.logo}
+                  alt={token.symbol}
+                  width={36}
+                  height={36}
+                  unoptimized
+                  className="rounded-full border-2 border-[#9F7AEA] bg-white object-cover"
+                />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center border-2 border-[#9F7AEA] text-[#9F7AEA] font-bold text-lg">
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center border-2 border-[#9F7AEA] text-[#9F7AEA] font-bold">
                   {token.symbol[0]}
                 </div>
               )}
-              <div className="text-left">
-                <div className="text-white font-semibold leading-tight text-base max-w-[100px] truncate" title={token.name || token.symbol}>
-                  {token.name || token.symbol}
+
+              <div className="text-start">
+                <div
+                  className="text-white font-semibold text-sm truncate max-w-[96px]"
+                  title={token.name ?? token.symbol}
+                >
+                  {token.name ?? token.symbol}
                 </div>
                 <div
-                  className="text-xs text-[#B8B4D8] max-w-[140px] truncate"
-                  title={`${Number(token.balance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${token.symbol}`}
+                  className="text-xs text-[#B8B4D8] truncate max-w-[120px]"
+                  title={`${Number(token.balance).toLocaleString(undefined, {
+                    maximumFractionDigits: 6,
+                  })} ${token.symbol}`}
                 >
-                  {Number(token.balance).toLocaleString(undefined, { maximumFractionDigits: 3 })} {token.symbol}
+                  {Number(token.balance).toLocaleString(undefined, {
+                    maximumFractionDigits: 3,
+                  })}{' '}
+                  {token.symbol}
                 </div>
               </div>
             </div>
-            <div className="text-right text-white font-bold text-lg min-w-[80px]">
-              ${value}
-            </div>
+
+            {/* USD value */}
+            <span className="text-white font-bold text-sm min-w-[72px] text-right">
+              ${usdValue}
+            </span>
           </button>
         );
       })}
