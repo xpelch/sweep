@@ -20,7 +20,7 @@ import { type SwapQuote, type SwapStatus } from '../types';
 import { blacklistToken, removeSignificantToken } from '../utils/tokenUtils';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const REQ_DELAY = 200;  // 200ms
+const REQ_DELAY = 200;
 
 export function useSweep(onRefresh?: () => void) {
   const [isLoading, setIsLoading] = useState(false);
@@ -52,9 +52,7 @@ export function useSweep(onRefresh?: () => void) {
 
       const processed: NonNullable<SwapStatus['processedTokens']> = [];
 
-      /* ------------------------------------------------------------------ */
-      /* Loop token par token : Quote → Approve (si besoin) → Swap → Statut */
-      /* ------------------------------------------------------------------ */
+
       for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         const uiAmount = uiAmounts[i];
@@ -66,7 +64,7 @@ export function useSweep(onRefresh?: () => void) {
           TARGET_TOKENS.find((t) => t.address.toLowerCase() === token.toLowerCase())
             ?.symbol;
 
-        /* --------- Cas natif : on ignore (rien à swap) ------------------ */
+
         if (token.toLowerCase() === ZERO_ADDRESS) {
           processed.push({
             address: token,
@@ -81,7 +79,7 @@ export function useSweep(onRefresh?: () => void) {
         }
 
         try {
-          /* --------- 1. Quote (0x) ------------------------------------- */
+
           if (rawAmount === 0n) {
             processed.push({
               address: token,
@@ -111,7 +109,7 @@ export function useSweep(onRefresh?: () => void) {
             if (res.status !== 422) break;
             retryCount++;
             if (retryCount >= 3) break;
-            await sleep(REQ_DELAY); // wait before retry
+            await sleep(REQ_DELAY);
           }
 
           if (res.status === 503) {
@@ -156,7 +154,7 @@ export function useSweep(onRefresh?: () => void) {
           
           updateStatus(processed);
 
-          /* --------- 2. Approve si nécessaire -------------------------- */
+
           if (quote.allowanceTarget) {
             const allowance = await publicClient.readContract({
               address: quote.token as Address,
@@ -175,7 +173,7 @@ export function useSweep(onRefresh?: () => void) {
             }
           }
 
-          /* --------- 3. Swap ------------------------------------------ */
+
           const swapHash = await walletClient.sendTransaction({
             to: quote.tx.to,
             data: quote.tx.data,
@@ -222,13 +220,13 @@ export function useSweep(onRefresh?: () => void) {
         await sleep(REQ_DELAY);
       }
 
-      /* ------------------------ Fin du lot ---------------------------- */
+
       setSwapStatus({ status: 'success', processedTokens: processed });
       onRefresh?.();
       setIsLoading(false);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [publicClient, walletClient],
+
+    [publicClient, walletClient, onRefresh],
   );
 
   return { sweep, isLoading, error, swapStatus };

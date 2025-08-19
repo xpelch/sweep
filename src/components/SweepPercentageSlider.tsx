@@ -11,9 +11,9 @@ export default function SweepPercentageSlider({ sweepPct, setSweepPct }: SweepPe
         <span className="font-bold text-white">{sweepPct}%</span>
       </label>
       <div className="relative h-2 w-full">
-        {/* track */}
+
         <div className="absolute inset-y-1/2 left-0 right-0 h-2 -translate-y-1/2 rounded-full bg-[#32275A]" />
-        {/* thumb */}
+        
         <div
           className="absolute top-1/2 -translate-y-1/2"
           style={{ left: `calc(${sweepPct}% - 0.5rem)` }}
@@ -23,7 +23,7 @@ export default function SweepPercentageSlider({ sweepPct, setSweepPct }: SweepPe
             style={{ transform: `rotate(${45 + sweepPct * 0.9}deg)` }}
           />
         </div>
-        {/* invisible range input */}
+
         <input
           id="sweepPct"
           type="range"

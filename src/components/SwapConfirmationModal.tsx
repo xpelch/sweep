@@ -27,9 +27,7 @@ export default function SwapConfirmationModal({
 
   if (!show || closed) return null;
 
-  /* ---------------------------------------------------------------------- */
-  /* Progress helpers                                                       */
-  /* ---------------------------------------------------------------------- */
+
   const processed = swapStatus.processedTokens ?? [];
   const total = processed.length;
 
@@ -49,9 +47,7 @@ export default function SwapConfirmationModal({
     tokens.find((t) => t.contractAddress.toLowerCase() === addr.toLowerCase())
       ?.symbol ?? `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-  /* ---------------------------------------------------------------------- */
-  /* Renderers                                                              */
-  /* ---------------------------------------------------------------------- */
+
   const renderTokenStatus = (token: ProcessedToken, idx: number) => {
     const label: Record<ProcessedToken['status'], string> = {
       success: 'SUCCESS',
@@ -125,9 +121,7 @@ export default function SwapConfirmationModal({
       </div>
     );
 
-  /* ---------------------------------------------------------------------- */
-  /* UI                                                                     */
-  /* ---------------------------------------------------------------------- */
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-[#221B2F] p-6 rounded-2xl border border-[#32275A] w-full max-w-md mx-4 relative">
@@ -145,7 +139,7 @@ export default function SwapConfirmationModal({
         )}
 
         <div className="text-center">
-          {/* Confirming */}
+  
           {swapStatus.status === 'confirming' && (
             <>
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9F7AEA] mx-auto mb-4" />
@@ -160,7 +154,7 @@ export default function SwapConfirmationModal({
             </>
           )}
 
-          {/* Success with at least one success */}
+  
           {swapStatus.status === 'success' && hasSuccess && (
             <>
               <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -179,7 +173,7 @@ export default function SwapConfirmationModal({
             </>
           )}
 
-          {/* All failed or generic error */}
+  
           {((swapStatus.status === 'success' && !hasSuccess) || swapStatus.status === 'error') && (
             <>
               <div className="w-12 h-12 bg-[#221B2F] rounded-full flex items-center justify-center mx-auto mb-4 relative">

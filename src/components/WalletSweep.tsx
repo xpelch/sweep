@@ -40,10 +40,7 @@ import TokenSelector from './TokenSelector';
 import TotalSweepValue from './TotalSweepValue';
 import { InlineToast } from './ui/InlineToast';
 
-/* ---------------------------------------------------------------------- */
-/* Minimal Chainlink ETH/USD feed (Base mainnet)                           */
-/* ---------------------------------------------------------------------- */
-const ETH_USD_FEED: Address = '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70'; // Standard proxy
+const ETH_USD_FEED: Address = '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70';
 const FEED_ABI = [
   {
     name: 'latestAnswer',
@@ -59,9 +56,6 @@ interface WalletSweepProps {
 }
 
 export default function WalletSweep({ onReady }: WalletSweepProps) {
-  /* ------------------------------------------------------------------ */
-  /* State / hooks                                                      */
-  /* ------------------------------------------------------------------ */
   const {
     loading: tokensLoading,
     significantTokens,
@@ -178,9 +172,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
   const calcUiAmount = (raw: bigint, decimals: number): string =>
     formatUnits(raw, decimals);
 
-  /* ------------------------------------------------------------------ */
-  /* Actions                                                            */
-  /* ------------------------------------------------------------------ */
+
   const handleSweep = async () => {
     if (!selectedTokens.length) return;
     setShowConfirmation(true);
@@ -208,9 +200,7 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Derived values for UI                                              */
-  /* ------------------------------------------------------------------ */
+
   const totalSweepUsd = (getTotalValue(selectedTokens) * sweepPct) / 100;
   const ethBalNumber = ethBalance ? Number(formatUnits(ethBalance, 18)) : undefined;
   const ethBalUsd = ethPrice && ethBalNumber !== undefined ? ethBalNumber * ethPrice : undefined;
@@ -219,13 +209,11 @@ export default function WalletSweep({ onReady }: WalletSweepProps) {
   const portfolioEth = ethPrice ? portfolioUsd / ethPrice : undefined;
   
 
-  /* ------------------------------------------------------------------ */
-  /* Render                                                             */
-  /* ------------------------------------------------------------------ */
+
   return (
     <div className="w-full min-h-screen bg-[#1A1523] flex flex-col items-center py-0">
       <div className="w-full max-w-xl px-4">
-        {/* NAVBAR + global refresh */}
+
         <NavBar onRefresh={handleRefresh} isRefreshing={refreshing} />
         <PortfolioSummary
           portfolioEth={portfolioEth}

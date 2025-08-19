@@ -53,7 +53,7 @@ export function formatTokenAmount(amount: string, decimals: number): string {
     return (Number(amount) / Math.pow(10, decimals)).toString();
 }
 
-const MIN_HOLDING_PERCENTAGE = 0.00000000000000000000000000000001; // 0.0000000000001%
+const MIN_HOLDING_PERCENTAGE = 0.00000000000000000000000000000001;
 
 export async function isSignificantHolding(
     tokenAddress: Address,

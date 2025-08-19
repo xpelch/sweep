@@ -27,7 +27,7 @@ function getDomainFromUrl(urlString: string | undefined): string {
 }
 
 export const authOptions: AuthOptions = {
-    // Configure one or more authentication providers
+
   providers: [
     CredentialsProvider({
       name: "Sign in with Farcaster",
@@ -42,10 +42,7 @@ export const authOptions: AuthOptions = {
           type: "text",
           placeholder: "0x0",
         },
-        // In a production app with a server, these should be fetched from
-        // your Farcaster data indexer rather than have them accepted as part
-        // of credentials.
-        // question: should these natively use the Neynar API?
+
         name: {
           label: "Name",
           type: "text",

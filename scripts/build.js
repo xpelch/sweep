@@ -94,16 +94,14 @@ async function loadEnvLocal() {
   }
 }
 
-// TODO: make sure rebuilding is supported
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, '..');
 
 async function validateDomain(domain) {
-  // Remove http:// or https:// if present
   const cleanDomain = domain.replace(/^https?:\/\//, '');
   
-  // Basic domain validation
   if (!cleanDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/)) {
     throw new Error('Invalid domain format');
   }
@@ -134,7 +132,6 @@ async function queryNeynarApp(apiKey) {
 
 async function validateSeedPhrase(seedPhrase) {
   try {
-    // Try to create an account from the seed phrase
     const account = mnemonicToAccount(seedPhrase);
     return account.address;
   } catch (error) {
@@ -191,10 +188,8 @@ async function main() {
     console.log('\n📝 Checking environment variables...');
     console.log('Loading values from .env...');
     
-    // Load .env.local if user wants to
     await loadEnvLocal();
 
-    // Get domain from user
     const { domain } = await inquirer.prompt([
       {
         type: 'input',
@@ -211,7 +206,6 @@ async function main() {
       }
     ]);
 
-    // Get frame name from user
     const { frameName } = await inquirer.prompt([
       {
         type: 'input',
@@ -227,7 +221,6 @@ async function main() {
       }
     ]);
 
-    // Get button text from user
     const { buttonText } = await inquirer.prompt([
       {
         type: 'input',
@@ -243,7 +236,6 @@ async function main() {
       }
     ]);
 
-    // Get Neynar configuration
     let neynarApiKey = process.env.NEYNAR_API_KEY;
     let neynarClientId = process.env.NEYNAR_CLIENT_ID;
     let useNeynar = true;
@@ -268,16 +260,14 @@ async function main() {
         break;
       }
 
-      // Try to get client ID from API
       const appInfo = await queryNeynarApp(neynarApiKey);
       if (appInfo) {
         neynarClientId = appInfo.app_uuid;
-        console.log('✅ Fetched Neynar app client ID');
+        console.log('Fetched Neynar app client ID');
         break;
       }
 
-      // If we get here, the API key was invalid
-      console.log('\n⚠️  Could not find Neynar app information. The API key may be incorrect.');
+      console.log('\n Could not find Neynar app information. The API key may be incorrect.');
       const { retry } = await inquirer.prompt([
         {
           type: 'confirm',
@@ -287,7 +277,6 @@ async function main() {
         }
       ]);
 
-      // Reset for retry
       neynarApiKey = null;
       neynarClientId = null;
 
@@ -297,7 +286,6 @@ async function main() {
       }
     }
 
-    // Get seed phrase from user
     let seedPhrase = process.env.SEED_PHRASE;
     if (!seedPhrase) {
       const { seedPhrase: inputSeedPhrase } = await inquirer.prompt([
@@ -322,66 +310,51 @@ async function main() {
       console.log('Using existing seed phrase from .env');
     }
 
-    // Validate seed phrase and get account address
     const accountAddress = await validateSeedPhrase(seedPhrase);
     console.log('✅ Generated account address from seed phrase');
 
     const fid = await lookupFidByCustodyAddress(accountAddress, neynarApiKey ?? 'FARCASTER_V2_FRAMES_DEMO');
 
-    // Generate and sign manifest
     console.log('\n🔨 Generating mini app manifest...');
     
-    // Determine webhook URL based on environment variables
     const webhookUrl = neynarApiKey && neynarClientId 
       ? `https://api.neynar.com/f/app/${neynarClientId}/event`
       : `${domain}/api/webhook`;
 
     const metadata = await generateFarcasterMetadata(domain, fid, accountAddress, seedPhrase, webhookUrl);
-    console.log('\n✅ Mini app manifest generated' + (seedPhrase ? ' and signed' : ''));
+    console.log('\nMini app manifest generated' + (seedPhrase ? ' and signed' : ''));
 
-    // Read existing .env file or create new one
     const envPath = path.join(projectRoot, '.env');
     let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
 
-    // Add or update environment variables
     const newEnvVars = [
-      // Base URL
       `NEXT_PUBLIC_URL=https://${domain}`,
-
-      // Frame metadata
       `NEXT_PUBLIC_FRAME_NAME="${frameName}"`,
       `NEXT_PUBLIC_FRAME_DESCRIPTION="${process.env.NEXT_PUBLIC_FRAME_DESCRIPTION || ''}"`,
       `NEXT_PUBLIC_FRAME_PRIMARY_CATEGORY="${process.env.NEXT_PUBLIC_FRAME_PRIMARY_CATEGORY || ''}"`,
       `NEXT_PUBLIC_FRAME_TAGS="${process.env.NEXT_PUBLIC_FRAME_TAGS || ''}"`,
       `NEXT_PUBLIC_FRAME_BUTTON_TEXT="${buttonText}"`,
 
-      // Analytics
       `NEXT_PUBLIC_ANALYTICS_ENABLED="${process.env.NEXT_PUBLIC_ANALYTICS_ENABLED || 'false'}"`,
 
-      // Neynar configuration (if it exists in current env)
       ...(process.env.NEYNAR_API_KEY ? 
         [`NEYNAR_API_KEY="${process.env.NEYNAR_API_KEY}"`] : []),
       ...(neynarClientId ? 
         [`NEYNAR_CLIENT_ID="${neynarClientId}"`] : []),
 
-      // FID (if it exists in current env)
       ...(process.env.FID ? [`FID="${process.env.FID}"`] : []),
 
-      // NextAuth configuration
       `NEXTAUTH_SECRET="${process.env.NEXTAUTH_SECRET || crypto.randomBytes(32).toString('hex')}"`,
       `NEXTAUTH_URL="https://${domain}"`,
 
-      // Frame manifest with signature
       `FRAME_METADATA=${JSON.stringify(metadata)}`,
     ];
 
-    // Filter out empty values and join with newlines
     const validEnvVars = newEnvVars.filter(line => {
       const [, value] = line.split('=');
       return value && value !== '""';
     });
 
-    // Update or append each environment variable
     validEnvVars.forEach(varLine => {
       const [key] = varLine.split('=');
       if (envContent.includes(`${key}=`)) {
@@ -391,12 +364,10 @@ async function main() {
       }
     });
 
-    // Write updated .env file
     fs.writeFileSync(envPath, envContent);
 
     console.log('\n✅ Environment variables updated');
 
-    // Run next build
     console.log('\nBuilding Next.js application...');
     const nextBin = path.normalize(path.join(projectRoot, 'node_modules', '.bin', 'next'));
     execSync(`"${nextBin}" build`, { 

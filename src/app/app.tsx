@@ -11,7 +11,7 @@ export default function App({ session }: { session: Session | null }) {
   const [showSplash, setShowSplash] = useState(true);
   const [ready, setReady] = useState(false);
 
-  // Splash for 1.5s, then show WalletSweep and overlay spinner until ready
+
   React.useEffect(() => {
     const splashTimeout = setTimeout(() => setShowSplash(false), 1500);
     return () => clearTimeout(splashTimeout);

@@ -10,7 +10,7 @@ interface TokenHoldingsProps {
   targetToken?: string;
 }
 
-/* ---------- helpers ---------- */
+
 
 const CACHE_KEY = 'cachedTokenPrices';
 
@@ -25,7 +25,7 @@ function readCachedPrices(): Record<string, number> {
   }
 }
 
-/* ---------- component ---------- */
+
 
 export default function TokenHoldings({
   selectedTokens,
@@ -36,7 +36,7 @@ export default function TokenHoldings({
 }: TokenHoldingsProps) {
   const [prices, setPrices] = useState<Record<string, number>>({});
 
-  /* cache prices on mount / tokens change */
+  
   useEffect(() => {
     const cached = readCachedPrices();
     setPrices(cached);
@@ -76,7 +76,7 @@ export default function TokenHoldings({
               }
               ${isTarget ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {/* icon + symbol */}
+    
             <div className="flex items-center gap-3">
               {token.logo ? (
                 <Image
@@ -114,7 +114,7 @@ export default function TokenHoldings({
               </div>
             </div>
 
-            {/* USD value */}
+    
             <span className="text-white font-bold text-sm min-w-[72px] text-right">
               ${usdValue}
             </span>
