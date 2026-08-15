@@ -1,4 +1,4 @@
-import { type Address } from 'viem';
+import type { Address, Hex } from 'viem';
 
 export type TokenSymbol = 'ETH' | 'USDC' | 'PRO';
 
@@ -13,30 +13,26 @@ export type TokenInfo = {
   balance?: string;
 };
 
-export interface TargetToken {
-    symbol: TokenSymbol;
-    name: string;
-    logo: string;
+export type SwapQuote = {
+  token: string;
+  amount: bigint;
+  allowanceTarget?: string;
+  tx: {
+    to: Address;
+    data: Hex;
+    value: bigint;
+  };
+};
+
+export type SwapStatus = {
+  status: 'idle' | 'confirming' | 'success' | 'error';
+  error?: string;
+  token?: string;
+  processedTokens?: {
     address: string;
-}
-
-export interface SwapQuote {
-    token: string;
-    amount: bigint;
-    allowanceTarget?: string;
-    tx: {
-        to: Address;
-        data: string;
-        value: bigint;
-    };
-}
-
-export interface SwapStatus {
-    status: 'idle' | 'confirming' | 'success' | 'error';
-    error?: string;
-}
-
-export interface TipConfig {
     amount: string;
-    currency: TokenSymbol;
-} 
+    status: 'success' | 'skipped' | 'failed' | 'confirming';
+    reason?: string;
+    symbol?: string;
+  }[];
+};

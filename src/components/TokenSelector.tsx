@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { TARGET_TOKENS } from '../configs/constants';
-import { type TokenSymbol } from '../types/index';
+import { type TokenSymbol } from '~/types';
 
 interface TokenSelectorProps {
     selectedToken: TokenSymbol;

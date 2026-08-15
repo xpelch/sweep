@@ -1,11 +1,8 @@
-import { NeynarAPIClient, Configuration, WebhookUserCreated } from '@neynar/nodejs-sdk';
+import { NeynarAPIClient, Configuration } from '@neynar/nodejs-sdk';
 import { APP_URL } from './constants';
 
 let neynarClient: NeynarAPIClient | null = null;
 
-// Example usage:
-// const client = getNeynarClient();
-// const user = await client.lookupUserByFid(fid); 
 export function getNeynarClient() {
   if (!neynarClient) {
     const apiKey = process.env.NEYNAR_API_KEY;
@@ -16,19 +13,6 @@ export function getNeynarClient() {
     neynarClient = new NeynarAPIClient(config);
   }
   return neynarClient;
-}
-
-type User = WebhookUserCreated['data'];
-
-export async function getNeynarUser(fid: number): Promise<User | null> {
-  try {
-    const client = getNeynarClient();
-    const usersResponse = await client.fetchBulkUsers({ fids: [fid] });
-    return usersResponse.users[0];
-  } catch (error) {
-    console.error('Error getting Neynar user:', error);
-    return null;
-  }
 }
 
 type SendFrameNotificationResult =
@@ -58,9 +42,9 @@ export async function sendNeynarFrameNotification({
       target_url: APP_URL,
     };
 
-    const result = await client.publishFrameNotifications({ 
-      targetFids, 
-      notification 
+    const result = await client.publishFrameNotifications({
+      targetFids,
+      notification,
     });
 
     if (result.notification_deliveries.length > 0) {
@@ -73,4 +57,4 @@ export async function sendNeynarFrameNotification({
   } catch (error) {
     return { state: "error", error };
   }
-} 
+}

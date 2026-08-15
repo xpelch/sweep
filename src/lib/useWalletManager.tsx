@@ -22,19 +22,19 @@ export function useWalletManager() {
     {
       type: "farcaster" as const,
       name: "Farcaster",
-      icon: FaWallet && (typeof FaWallet === 'function' ? FaWallet({}) : null),
+      icon: <FaWallet />,
       connector: connectors.find((c) => c.id === "farcasterFrame")!,
     },
     {
       type: "coinbase" as const,
       name: "Coinbase",
-      icon: SiCoinbase && (typeof SiCoinbase === 'function' ? SiCoinbase({}) : null),
+      icon: <SiCoinbase />,
       connector: connectors.find((c) => c.id === "coinbaseWallet")!,
     },
     {
       type: "metamask" as const,
       name: "MetaMask",
-      icon: FaWallet && (typeof FaWallet === 'function' ? FaWallet({}) : null),
+      icon: <FaWallet />,
       connector: connectors.find((c) => c.id === "metaMask")!,
     },
   ].filter((w) => w.connector);

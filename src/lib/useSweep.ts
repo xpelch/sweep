@@ -1,22 +1,16 @@
 import { useCallback, useState } from 'react';
-import {
-  createPublicClient,
-  http,
-  type Address,
-  type Hex,
-} from 'viem';
-import { base } from 'viem/chains';
+import { type Address, type Hex } from 'viem';
 import { useWalletClient } from 'wagmi';
 import { logError, logInfo } from './logger';
+import { publicClient } from './rpc';
 
-import { PUBLIC_RPC_URL } from '~/configs/env';
 import {
   ERC20_ABI,
   MAX_UINT256,
   TARGET_TOKENS,
   ZERO_ADDRESS,
 } from '../configs/constants';
-import { type SwapQuote, type SwapStatus } from '../types';
+import { type SwapQuote, type SwapStatus } from '~/types';
 import { blacklistToken, removeSignificantToken } from '../utils/tokenUtils';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -28,10 +22,6 @@ export function useSweep(onRefresh?: () => void) {
   const [swapStatus, setSwapStatus] = useState<SwapStatus>({ status: 'idle' });
 
   const { data: walletClient } = useWalletClient();
-  const publicClient = createPublicClient({
-    chain: base,
-    transport: http(PUBLIC_RPC_URL),
-  });
 
   const updateStatus = (processed: SwapStatus['processedTokens']) =>
     setSwapStatus({ status: 'confirming', processedTokens: [...(processed ?? [])] });
@@ -226,7 +216,7 @@ export function useSweep(onRefresh?: () => void) {
       setIsLoading(false);
     },
 
-    [publicClient, walletClient, onRefresh],
+    [walletClient, onRefresh],
   );
 
   return { sweep, isLoading, error, swapStatus };

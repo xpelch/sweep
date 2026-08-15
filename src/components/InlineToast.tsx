@@ -52,17 +52,17 @@ interface InlineToastProps {
 export const InlineToast: React.FC<InlineToastProps> = ({ type, message, onClose }) => {
   const style = typeStyles[type] || typeStyles.info;
   return (
-<div
-  className={`flex items-center gap-2 px-4 py-2 rounded-md border shadow-md ${style.bg} ${style.text}`}
-  role={type === 'error' ? 'alert' : 'status'}
->
+    <div
+      className={`flex items-center gap-2 px-4 py-2 rounded-md border shadow-md ${style.bg} ${style.text}`}
+      role={type === 'error' ? 'alert' : 'status'}
+    >
       <span>{style.icon}</span>
       <span className="flex-1 text-sm font-medium">{message}</span>
       {onClose && (
         <button
           onClick={onClose}
           className="ml-2 text-lg font-bold focus:outline-none"
-          aria-label="Fermer la notification"
+          aria-label="Close notification"
         >
           ×
         </button>

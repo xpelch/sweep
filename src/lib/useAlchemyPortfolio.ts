@@ -1,26 +1,10 @@
 import { TokenBalance } from "alchemy-sdk";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPublicClient, erc20Abi, formatUnits, http } from "viem";
-import { base } from "viem/chains";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { erc20Abi, formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { PUBLIC_RPC_URL } from "~/configs/env";
-import { isSignificantHolding, isTokenBlacklisted } from "../utils/tokenUtils";
-
-const client = createPublicClient({
-  chain: base,
-  transport: http(PUBLIC_RPC_URL!),
-});
-
-export type TokenInfo = {
-  contractAddress: string;
-  symbol: string;
-  name: string;
-  logo: string | null;
-  decimals: number;
-  bigIntAmount: bigint;
-  amount: string;
-  balance?: string;
-};
+import { publicClient } from "~/lib/rpc";
+import { type TokenInfo } from "~/types";
+import { isTokenBlacklisted } from "../utils/tokenUtils";
 
 interface PortfolioData {
   tokens: TokenInfo[];
@@ -107,7 +91,7 @@ async function fetchTokenMetadatas(addresses: string[]) {
       },
     ]);
 
-    const results = await client.multicall({ contracts: calls });
+    const results = await publicClient.multicall({ contracts: calls });
     for (let i = 0; i < chunk.length; i++) {
       const name = results[i * 3].result as string;
       const symbol = results[i * 3 + 1].result as string;
@@ -201,41 +185,14 @@ function filterTokensByUsdValue(
   });
 }
 
-async function applySignificanceFilter(
-  tokens: TokenInfo[],
-  useSignificanceFilter: boolean,
-) {
-  const checks = await Promise.all(
-    tokens.map(async (token) => {
-      if (!useSignificanceFilter) return token;
-      const ok = await isSignificantHolding(
-        token.contractAddress as `0x${string}`,
-        token.bigIntAmount,
-      );
-      return ok ? token : null;
-    }),
+function filterBlacklisted(tokens: TokenInfo[]) {
+  return tokens.filter(
+    (t) => !isTokenBlacklisted(t.contractAddress),
   );
-  return checks.filter(
-    (t): t is TokenInfo => t !== null && !isTokenBlacklisted(t.contractAddress),
-  );
-}
-
-function sortByUsdValue(
-  tokens: TokenInfo[],
-  prices: Record<string, number>,
-) {
-  return [...tokens].sort((a, b) => {
-    const pa = prices[a.contractAddress.toLowerCase()] || 0;
-    const pb = prices[b.contractAddress.toLowerCase()] || 0;
-    const va = parseFloat(a.amount) * pa;
-    const vb = parseFloat(b.amount) * pb;
-    return vb - va;
-  });
 }
 
 export function useAlchemyPortfolio() {
   const { address, isConnected } = useAccount();
-  const [useSignificanceFilter, setUseSignificanceFilter] = useState(true);
   const [portfolioData, setPortfolioData] =
     useState<PortfolioData>(defaultPortfolioData);
   const hasLoadedCache = useRef(false);
@@ -277,15 +234,12 @@ export function useAlchemyPortfolio() {
         validTokens,
         priceMap,
       );
-      const filteredTokens = await applySignificanceFilter(
-        valueFilteredTokens,
-        useSignificanceFilter,
-      );
+      const significantTokens = filterBlacklisted(valueFilteredTokens);
 
       const newData: PortfolioData = {
         tokens: valueFilteredTokens,
         prices: priceMap,
-        significantTokens: filteredTokens,
+        significantTokens,
         loading: false,
         error: null,
         lastUpdateTime: Date.now(),
@@ -300,18 +254,10 @@ export function useAlchemyPortfolio() {
         error: e instanceof Error ? e.message : "Failed to fetch portfolio",
       }));
     }
-  }, [address, isConnected, useSignificanceFilter]);
-
-  const sortedTokens = useMemo(
-    () => sortByUsdValue(portfolioData.significantTokens, portfolioData.prices),
-    [portfolioData.significantTokens, portfolioData.prices],
-  );
+  }, [address, isConnected]);
 
   return {
     ...portfolioData,
-    sortedTokens,
     refreshBalances: fetchPortfolio,
-    useSignificanceFilter,
-    setUseSignificanceFilter,
   };
 }

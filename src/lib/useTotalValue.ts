@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { type TokenInfo } from '../types';
+import { type TokenInfo } from '~/types';
 import { calculateTotalValue } from '../utils/tokenUtils';
 
 export function useTotalValue() {

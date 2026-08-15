@@ -47,7 +47,10 @@ function useCoinbaseWalletAutoConnect() {
       // Use setTimeout to ensure this runs after the render phase
       setTimeout(() => {
         try {
-          connect({ connector: connectors[1] }); // Coinbase Wallet connector
+          const coinbaseConnector = connectors.find(
+            (c) => c.id === "coinbaseWallet",
+          );
+          if (coinbaseConnector) connect({ connector: coinbaseConnector });
         } catch (error) {
           console.warn('Error connecting to Coinbase Wallet:', error);
         }

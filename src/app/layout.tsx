@@ -8,6 +8,7 @@ import ClientProviders from "../components/ClientProviders";
 export const metadata: Metadata = {
   title: APP_NAME,
   description: APP_DESCRIPTION,
+  metadataBase: APP_URL ? new URL(APP_URL) : undefined,
 };
 
 export default async function RootLayout({

@@ -2,17 +2,19 @@ import axios from 'axios';
 import { NextRequest, NextResponse } from 'next/server';
 import { logError } from '~/lib/logger';
 
-if (!process.env.ZERO_X_API_KEY) {
-  throw new Error('Missing environment variable: ZERO_X_API_KEY');
-}
-
 export async function GET(req: NextRequest) {
+  const apiKey = process.env.ZERO_X_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { message: 'Missing environment variable: ZERO_X_API_KEY' },
+      { status: 500 },
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const params = new URLSearchParams(searchParams);
 
-  console.log('params', params.toString());
-  // Ajoute les paramètres pour les frais
-  // Note: '0x...' est l'adresse de ton allowance holder/wallet
+  // Add the swap fee parameters for the allowance holder
   params.append('swapFeeRecipient', '0x78C825b3bBD9C08d0809C327ab042764C4D327c5');
   params.append('swapFeeBps', '100'); // 1%
   params.append('swapFeeToken', params.get('buyToken') || '');
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data } = await axios.get(quoteUrl, {
       headers: {
-        '0x-api-key': process.env.ZERO_X_API_KEY,
+        '0x-api-key': apiKey,
         '0x-version': 'v2',
       },
     });
@@ -39,7 +41,7 @@ export async function GET(req: NextRequest) {
     let statusCode = 500;
 
     if (axios.isAxiosError(error) && error.response) {
-      // Si 0x API renvoie une erreur spécifique, on peut la relayer
+      // Relay the specific error returned by the 0x API
       errorMessage = error.response.data.reason || errorMessage;
       statusCode = error.response.status;
     }

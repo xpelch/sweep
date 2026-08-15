@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import type { TokenInfo } from '../lib/useAlchemyPortfolio';
+import type { TokenInfo } from '~/types';
 
 interface TokenHoldingsProps {
   selectedTokens: TokenInfo[];

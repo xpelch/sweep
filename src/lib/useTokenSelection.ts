@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { type TokenInfo, type TokenSymbol } from '../types';
+import { type TokenInfo, type TokenSymbol } from '~/types';
 
 export function useTokenSelection(tokens: TokenInfo[], targetToken: TokenSymbol) {
     const [selectedTokens, setSelectedTokens] = useState<TokenInfo[]>([]);

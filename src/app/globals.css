@@ -37,7 +37,7 @@ body {
   }
 }
 
-/* Personnalisation Sonner pour thème violet/dark */
+/* Sonner toast theming for the purple/dark theme */
 :root,
 [data-sonner-theme="dark"] {
   --sonner-bg: #221B2F;
