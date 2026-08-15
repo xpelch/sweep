@@ -1,150 +1,116 @@
 # Sweep — Token Consolidation Mini App
 
-A modern Farcaster Mini App that lets users consolidate their token holdings into a single target token with one-click swaps powered by the 0x Protocol.
+A Farcaster Mini App (Frames v2) that lets users consolidate their token holdings into a single target token with one-click swaps powered by the 0x Protocol on Base.
 
 ![Sweep App](public/screenshot/01.png)
 
 ## Features
 
-- **Token Consolidation**: Sweep multiple tokens into ETH, USDC, or other major tokens.
-- **Smart Portfolio Management**: Detect and display significant token holdings automatically.
-- **Real-Time Pricing**: Live price feeds from Chainlink for accurate valuations.
-- **Gas Optimization**: Intelligent transaction batching and approval management.
-- **Farcaster Integration**: Native Mini App experience with seamless wallet connections.
-- **Modern UI/UX**: Clean, responsive interface built with Next.js and Tailwind CSS.
+- **Sweep to a target token**: Convert any number of selected holdings into ETH, USDC, or PRO in one flow.
+- **Sweep percentage**: Choose what fraction of each holding to convert (0–100%).
+- **Smart defaults**: Dust tokens (under ~$0.01) and tokens without 0x liquidity are hidden automatically; hidden tokens are remembered per browser.
+- **Live valuations**: Balances via Alchemy, prices via Alchemy's price API, with a 5-minute client-side cache.
+- **Farcaster native**: Sign in with Farcaster, add the mini app, and receive notifications.
+- **Per-token status tracking**: The confirmation modal shows each token as pending, successful, skipped, or failed.
 
-## Tech Stack
+## How it works
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS, Radix UI Components
+1. The user connects a wallet inside Warpcast (or a Farcaster mini-app environment) and their ERC-20 balances on Base are fetched via Alchemy.
+2. Holdings are enriched with metadata and prices, filtered for dust, and displayed.
+3. The user picks a target token and a sweep percentage, then selects which holdings to sweep.
+4. For each selected holding, the app fetches a firm quote from the 0x `/swap/allowance-holder/quote` endpoint, approves the allowance holder if needed, and submits the swap transaction.
+5. Swaps run sequentially, one transaction per holding, with per-token results shown in the confirmation modal.
+
+## Tech stack
+
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript (strict)
+- **Styling**: Tailwind CSS
 - **Blockchain**: Viem, Wagmi, Base Network
-- **DeFi**: 0x Protocol API, Permit2 for gas‑optimized approvals
-- **Authentication**: Farcaster Auth Kit, NextAuth.js
-- **Data**: Alchemy SDK, Upstash Redis
+- **DeFi**: 0x Protocol API (allowance holder, v2)
+- **Farcaster**: Frame SDK, Auth Kit, Neynar
+- **Data**: Alchemy, Upstash Redis (optional, for notifications)
 - **Deployment**: Vercel
-
-## Screenshots
-
-- ![Main Interface](public/screenshot/01.png)
-- ![Token Selection](public/screenshot/02.png)
-- ![Swap Confirmation](public/screenshot/03.png)
 
 ## Architecture
 
-### Core Components
+The app is a Next.js project split into:
 
-- **WalletSweep**: Main application component handling token consolidation logic.
-- **PortfolioProvider**: Manages token balances and portfolio state.
-- **useSweep**: Hook for swap execution and transaction management.
-- **TokenSelector**: Interactive token selection interface.
-- **SwapConfirmationModal**: Transaction confirmation and status tracking.
+- `src/app/` — pages and API routes (balances, prices, quotes, webhooks, auth)
+- `src/components/` — UI components, split by concern (portfolio, selection, sweep orchestration)
+- `src/components/providers/` — React context providers (wagmi, portfolio, loading)
+- `src/lib/` — client and server hooks, plus shared infrastructure (RPC client, KV store, notifications, logging)
+- `src/configs/` — environment-derived constants (target tokens, ABI, RPC URL)
+- `src/utils/` — pure helpers (sweep math, token utilities, formatting)
+- `src/types/` — shared domain types
 
-## Getting Started
+Design decisions are recorded in [`docs/adr/`](docs/adr/); domain vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
+
+## Getting started
 
 ### Prerequisites
 
 - Node.js 20+
-- npm or yarn
-- Base Network RPC access
-- 0x Protocol API key
+- An Alchemy API key and a 0x API key (required for balances, prices, and quotes)
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd sweep
-
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env.local
 ```
 
-### Environment Variables
+Fill in the values in `.env.local`:
 
 ```env
-# App Configuration
-NEXT_PUBLIC_URL=your-app-url
+NEXT_PUBLIC_URL=http://localhost:3000
 NEXT_PUBLIC_FRAME_NAME=Sweep
-NEXT_PUBLIC_FRAME_DESCRIPTION=Consolidate your tokens with one click
+NEXT_PUBLIC_FRAME_DESCRIPTION=Consolidate your token holdings into a single target token
 NEXT_PUBLIC_FRAME_BUTTON_TEXT=Start Sweeping
 
-# Blockchain
-PUBLIC_RPC_URL=your-base-rpc-url
-NEXT_PUBLIC_CHAIN_ID=8453
-
-# APIs
-ZEROX_API_KEY=your-0x-api-key
 ALCHEMY_API_KEY=your-alchemy-key
-NEYNAR_API_KEY=your-neynar-key
+ZERO_X_API_KEY=your-0x-api-key
+NEYNAR_API_KEY=your-neynar-key      # optional, for notifications
+NEYNAR_CLIENT_ID=your-neynar-client-id
 
-# Authentication
+NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-nextauth-secret
-NEXTAUTH_URL=your-app-url
 ```
 
 ### Development
 
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Deploy to Vercel
+npm run dev          # starts Next.js on port 3000 (with localtunnel when USE_TUNNEL=true)
+npm run build        # production build
+npm run lint         # ESLint
+npm test             # unit tests (Vitest)
 npm run deploy:vercel
 ```
 
-## Configuration
+To preview the mini app inside Warpcast, open the Warpcast Mini App Developer Tools and enter your app URL (see `scripts/dev.js` output).
 
-### Supported Networks
+## Target tokens
 
-- **Base Mainnet**: Primary network with full DeFi ecosystem.
-- **Base Sepolia**: Testnet for development and testing.
+- **ETH** — native token
+- **USDC** — `0x8335...2913`
+- **PRO** — `0xf65c...e6c`
 
-### Target Tokens
+## Known limitations
 
-- ETH (native)
-- USDC
-- WETH
-- Custom tokens via 0x Protocol
-
-## Performance
-
-- **Bundle Size**: Optimized with Next.js 15 tree shaking.
-- **Initial Load**: Fast startup with intelligent caching.
-- **Transaction Speed**: Gas usage optimized with Permit2 approvals.
-- **Reliability**: High availability with comprehensive error handling.
-
-## Security
-
-- **Audited Integrations**: Uses audited protocols where applicable.
-- **Wallet Security**: Non-custodial design with user-controlled keys.
-- **API Security**: Rate limiting and request validation.
-- **Error Handling**: Graceful degradation and clear user feedback.
-
-## Contributing
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m "Add amazing feature"`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
+- **Base mainnet only** — no testnet or multi-chain support (see [ADR-0002](docs/adr/0002-base-mainnet-only.md)).
+- **Sequential swaps** — one transaction per token; no batching (see [ADR-0001](docs/adr/0001-sequential-sweep-execution.md)).
+- **1% swap fee** — every quote carries a 1% fee to the app's fee recipient (see [ADR-0003](docs/adr/0003-0x-swap-fee.md)).
+- **No automated end-to-end tests** — unit tests cover the pure logic; wallet flows require manual testing in Warpcast.
+- **Wallet connect only works in a Farcaster mini-app environment** (Warpcast), not a plain browser.
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-- [0x Protocol](https://0x.org/) for decentralized exchange infrastructure.
-- [Farcaster](https://farcaster.xyz/) for the social protocol.
-- [Base](https://base.org/) for the L2 network.
-- [Neynar](https://neynar.com/) for Farcaster development tools.
-
----
-
-Built with ❤️ for the decentralized future.
+- [0x Protocol](https://0x.org/) for decentralized exchange infrastructure
+- [Farcaster](https://farcaster.xyz/) for the social protocol
+- [Base](https://base.org/) for the L2 network
+- [Neynar](https://neynar.com/) for Farcaster development tools

@@ -1,0 +1,3 @@
+# Sequential sweep execution
+
+Swaps run sequentially — one transaction per selected holding, in list order — rather than batched into a single transaction. Batching would require aggregation infrastructure or multi-hop routing that the 0x allowance-holder endpoint doesn't provide for arbitrary token sets, so the app keeps the flow simple and auditable per token, with per-token status tracking in the UI.
